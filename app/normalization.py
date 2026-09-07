@@ -22,6 +22,12 @@ def optional_text(value: str | None) -> str | None:
     return cleaned or None
 
 
+def optional_free_text(value: str | None) -> str | None:
+    """Trim free text without changing its internal spacing or line breaks."""
+    cleaned = (value or "").strip()
+    return cleaned or None
+
+
 def normalize_status(value: str) -> str:
     key = clean_text(value).casefold()
     try:
@@ -78,3 +84,11 @@ def parse_seed_datetime(value: str | None) -> datetime | None:
             continue
     raise ValueError(f"Unsupported date format: {value!r}")
 
+
+def as_utc(value: datetime | None) -> datetime | None:
+    """Attach the project's UTC convention to naive SQLite datetimes."""
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)

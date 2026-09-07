@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from sqlalchemy import func, select
 
 from app.database import Database
+from app.leads import router as leads_router
 from app.models import Lead
 from app.schemas import HealthResponse
 from app.seed import load_seed_data
@@ -39,6 +40,7 @@ def create_app(
         lifespan=lifespan,
     )
     app.state.database = database
+    app.include_router(leads_router)
 
     @app.get("/", include_in_schema=False)
     def root() -> dict[str, str]:
@@ -54,4 +56,3 @@ def create_app(
 
 
 app = create_app()
-

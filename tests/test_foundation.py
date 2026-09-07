@@ -59,12 +59,18 @@ def test_seed_is_idempotent_and_normalized(tmp_path: Path) -> None:
     }
 
 
-def test_openapi_contains_only_foundation_endpoint(tmp_path: Path) -> None:
+def test_openapi_contains_milestone_two_endpoints(tmp_path: Path) -> None:
     app = build_test_app(tmp_path)
 
     with TestClient(app) as client:
         schema = client.get("/openapi.json").json()
 
-    assert set(schema["paths"]) == {"/health"}
+    assert set(schema["paths"]) == {
+        "/health",
+        "/leads",
+        "/leads/export",
+        "/leads/{lead_id}",
+    }
     assert "/leads/dedupe-candidates" not in schema["paths"]
     assert "/leads/extract-source" not in schema["paths"]
+    assert "/leads/ingest" not in schema["paths"]

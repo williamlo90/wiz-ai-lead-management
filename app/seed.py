@@ -14,6 +14,7 @@ from app.normalization import (
     normalize_name,
     normalize_phone,
     normalize_status,
+    optional_free_text,
     optional_text,
     parse_seed_datetime,
 )
@@ -49,7 +50,7 @@ def load_seed_data(session: Session, csv_path: Path) -> int:
                 country=normalize_country(row["Country/Region"]),
                 status=normalize_status(row["Lead Status"]),
                 owner=optional_text(row["Contact Owner"]),
-                notes=optional_text(row["Notes"]),
+                notes=optional_free_text(row["Notes"]),
                 created_at=created_at,
                 updated_at=parse_seed_datetime(row["Last Modified Date"]),
                 original_source=optional_text(row["Original Source"]),
@@ -67,4 +68,3 @@ def load_seed_data(session: Session, csv_path: Path) -> int:
     session.add_all(leads)
     session.commit()
     return len(leads)
-
