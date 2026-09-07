@@ -1,3 +1,5 @@
+import csv
+import io
 from collections import Counter
 from pathlib import Path
 
@@ -358,3 +360,93 @@ def test_patch_persists_original_source_from_ordered_journey(tmp_path: Path) -> 
     assert stored is not None
     assert stored.notes == notes
     assert stored.source_channel == "LinkedIn"
+
+
+@pytest.mark.parametrize(
+    ("message", "patched_notes", "expected_notes"),
+    [
+        (None, None, None),
+        (None, " \n ", None),
+        ("Hello", "Hello", "Hello"),
+    ],
+)
+def test_explicit_notes_patch_replaces_website_fallback_and_survives_restart(
+    tmp_path: Path,
+    message: str | None,
+    patched_notes: str | None,
+    expected_notes: str | None,
+) -> None:
+    database_url = f"sqlite:///{(tmp_path / 'notes-replacement.db').as_posix()}"
+    app = create_app(database_url, SEED_PATH)
+    payload = {
+        "name": "Patch Source Example",
+        "email": "patch-source@example-new.test",
+        "phone": "+62 812 555 0200",
+        "company": "Patch Source Labs",
+        "country": "Indonesia",
+        "form_id": "demo-request",
+        "form_name": "Demo Request",
+        "page_url": "/request-demo",
+        "submitted_at": "2026-07-01T05:00:00Z",
+        "message": message,
+    }
+
+    with TestClient(app) as client:
+        created = client.post("/leads/ingest", json=payload)
+        assert created.status_code == 201
+        created_lead = created.json()["lead"]
+        lead_id = created_lead["id"]
+        assert created_lead["source_channel"] == "Website"
+        assert created_lead["updated_at"] is None
+
+        patched = client.patch(
+            f"/leads/{lead_id}", json={"notes": patched_notes}
+        )
+        replay = client.patch(
+            f"/leads/{lead_id}", json={"notes": patched_notes}
+        )
+        status_only = client.patch(
+            f"/leads/{lead_id}", json={"status": "Contacted"}
+        )
+
+    assert patched.status_code == replay.status_code == status_only.status_code == 200
+    patched_lead = patched.json()
+    assert patched_lead["notes"] == expected_notes
+    assert patched_lead["source_channel"] == "Other"
+    assert patched_lead["source_detail"] == "Source unspecified"
+    assert patched_lead["updated_at"] is not None
+    assert replay.json()["updated_at"] == patched_lead["updated_at"]
+    assert status_only.json()["source_channel"] == "Other"
+    assert status_only.json()["source_detail"] == "Source unspecified"
+    for field in (
+        "name",
+        "company",
+        "email",
+        "phone",
+        "country",
+        "created_at",
+        "original_source",
+        "form_metadata",
+    ):
+        assert patched_lead[field] == created_lead[field]
+
+    restarted = create_app(database_url, SEED_PATH)
+    with TestClient(restarted) as client:
+        persisted = client.get(f"/leads/{lead_id}")
+        listed = client.get("/leads", params={"q": payload["email"]})
+        exported = client.get("/leads/export", params={"q": payload["email"]})
+        dashboard = client.get("/dashboard")
+
+    assert persisted.status_code == 200
+    assert persisted.json()["source_channel"] == "Other"
+    assert persisted.json()["source_detail"] == "Source unspecified"
+    assert listed.status_code == exported.status_code == dashboard.status_code == 200
+    assert listed.json()["total"] == 1
+    assert listed.json()["items"][0]["source_channel"] == "Other"
+    export_rows = list(csv.DictReader(io.StringIO(exported.text)))
+    assert len(export_rows) == 1
+    assert export_rows[0]["source_channel"] == "Other"
+    assert export_rows[0]["source_detail"] == "Source unspecified"
+    dashboard_body = dashboard.json()
+    assert sum(dashboard_body["by_source_channel"].values()) == dashboard_body["total"]
+    assert dashboard_body["by_source_channel"]["Other"] >= 1

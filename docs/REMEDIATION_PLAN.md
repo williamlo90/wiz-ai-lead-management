@@ -104,7 +104,7 @@ None identified. The service runs and the supplied-data workflows function. The 
 
 ## Remediation Milestones
 
-These numbers are separate from the completed implementation milestones 1-8. Remediation Milestone 1 is **ACCEPTED AND COMMITTED**. Remediation Milestones 2 and 3 are **NOT STARTED**.
+These numbers are separate from the completed implementation milestones 1-8. Remediation Milestones 1 and 2 are **ACCEPTED AND COMMITTED**. Remediation Milestone 3 is **NOT STARTED**.
 
 ### Remediation Milestone 1: Grounded Source Extraction
 
@@ -160,6 +160,8 @@ Pattern changes can reduce seed recall or overinterpret connectors inside names/
 
 ### Remediation Milestone 2: Explicit Notes Replacement
 
+**Status:** ACCEPTED AND COMMITTED - R-03 is complete.
+
 #### Goal
 
 Make PATCH attribution follow explicit Notes replacement even when the text value is unchanged.
@@ -195,11 +197,11 @@ No new source-history field, ingest identity changes, contact-write API, mass ba
 
 #### Acceptance Criteria
 
-- [ ] Both R-03 reproductions are corrected.
-- [ ] A source-only change is committed atomically and timestamped.
-- [ ] True no-op PATCH does not advance the timestamp.
-- [ ] Omitted Notes and existing ingest attribution semantics are preserved.
-- [ ] Cleared source remains cleared after restart; full suite passes.
+- [x] Both R-03 reproductions are corrected.
+- [x] A source-only change is committed atomically and timestamped.
+- [x] True no-op PATCH does not advance the timestamp.
+- [x] Omitted Notes and existing ingest attribution semantics are preserved.
+- [x] Cleared source remains cleared after restart; full suite passes.
 
 #### Risk
 

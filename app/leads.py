@@ -168,18 +168,21 @@ def update_lead(
         raise HTTPException(status_code=404, detail="Lead not found")
 
     changed = False
-    notes_changed = False
     values = update.model_dump(exclude_unset=True)
     for field in ("status", "owner", "notes"):
         if field in values and getattr(lead, field) != values[field]:
             setattr(lead, field, values[field])
             changed = True
-            notes_changed = notes_changed or field == "notes"
 
-    if notes_changed:
+    if "notes" in values:
         source = extract_source(lead.notes)
-        lead.source_channel = source.channel
-        lead.source_detail = source.detail
+        if (
+            lead.source_channel != source.channel
+            or lead.source_detail != source.detail
+        ):
+            lead.source_channel = source.channel
+            lead.source_detail = source.detail
+            changed = True
     if changed:
         lead.updated_at = datetime.now(timezone.utc)
         session.commit()
