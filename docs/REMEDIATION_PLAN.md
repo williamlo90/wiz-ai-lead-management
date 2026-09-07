@@ -104,11 +104,13 @@ None identified. The service runs and the supplied-data workflows function. The 
 
 ## Remediation Milestones
 
-These numbers are separate from the completed implementation milestones 1-8. Remediation Milestones 1 and 2 are **ACCEPTED AND COMMITTED**. Remediation Milestone 3 is **NOT STARTED**.
+These numbers are separate from the completed implementation milestones 1-8. Remediation Milestones 1-3 are **ACCEPTED AND COMMITTED**.
 
 ### Remediation Milestone 1: Grounded Source Extraction
 
 **Status:** ACCEPTED AND COMMITTED - R-01 and R-02 are complete.
+
+**Final audit follow-up:** ACCEPTED AND COMMITTED. Prefixed `After`/`Before` journeys and referral clauses ending at those connectors are covered by regression tests.
 
 #### Goal
 
@@ -209,6 +211,8 @@ Treating every explicit Notes field as a write can break no-op timestamps. Deter
 
 ### Remediation Milestone 3: Decision Tests and Documentation Alignment
 
+**Status:** ACCEPTED AND COMMITTED - R-04 and R-05 are complete.
+
 #### Goal
 
 Protect automatic-update decisions with targeted regression tests and finish small factual documentation corrections.
@@ -243,11 +247,11 @@ No threshold tuning, new blocking key, dedupe algorithm rewrite, broad fixture c
 
 #### Acceptance Criteria
 
-- [ ] Tests would catch removal of the competing-likely guard and improper narrowing of shared exact identifiers.
-- [ ] Threshold comparison direction is protected by boundary assertions.
-- [ ] New-lead replay has a committed regression test.
-- [ ] Documentation states the current validated implementation and limitations.
-- [ ] No scoring rule, block, schema, or endpoint behavior changes; full suite passes.
+- [x] Tests would catch removal of the competing-likely guard and improper narrowing of shared exact identifiers.
+- [x] Threshold comparison direction is protected by boundary assertions.
+- [x] New-lead replay has a committed regression test.
+- [x] Documentation states the current validated implementation and limitations.
+- [x] No scoring rule, block, schema, or endpoint behavior changes; full suite passes.
 
 #### Risk
 

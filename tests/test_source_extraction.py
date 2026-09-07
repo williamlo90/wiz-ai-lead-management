@@ -121,6 +121,10 @@ def test_event_details_use_only_the_event_sentence(text: str, detail: str) -> No
             "Referred by Aiko Diop\n\nConnected, sending proposal.",
             "Referred by Aiko Diop",
         ),
+        (
+            "Referred by Aiko Diop before connecting on LinkedIn.",
+            "Referred by Aiko Diop",
+        ),
     ],
 )
 def test_person_and_direction_details_require_explicit_evidence(
@@ -162,6 +166,18 @@ def test_person_and_direction_details_require_explicit_evidence(
         ),
         (
             "Filled out the form on the homepage after meeting us at the "
+            "SaaStr Annual booth.",
+            "Event",
+            "SaaStr Annual - Booth conversation",
+        ),
+        (
+            "After filling out the form on the homepage, met us at the "
+            "SaaStr Annual booth.",
+            "Website",
+            "Form submission - homepage",
+        ),
+        (
+            "Before filling out the form on the homepage, met us at the "
             "SaaStr Annual booth.",
             "Event",
             "SaaStr Annual - Booth conversation",
@@ -345,9 +361,31 @@ def test_patch_persists_grounded_source_without_changing_notes(tmp_path: Path) -
     assert stored.notes == notes
 
 
-def test_patch_persists_original_source_from_ordered_journey(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("notes", "channel", "detail"),
+    [
+        (
+            "Connected on LinkedIn, then referred by Aiko Diop.",
+            "LinkedIn",
+            "LinkedIn interaction",
+        ),
+        (
+            "After filling out the form on the homepage, met us at the "
+            "SaaStr Annual booth.",
+            "Website",
+            "Form submission - homepage",
+        ),
+        (
+            "Referred by Aiko Diop before connecting on LinkedIn.",
+            "Referral",
+            "Referred by Aiko Diop",
+        ),
+    ],
+)
+def test_patch_persists_original_source_from_ordered_journey(
+    tmp_path: Path, notes: str, channel: str, detail: str
+) -> None:
     app = create_app(f"sqlite:///{(tmp_path / 'ordered.db').as_posix()}", SEED_PATH)
-    notes = "Connected on LinkedIn, then referred by Aiko Diop."
 
     with TestClient(app) as client:
         response = client.patch("/leads/100234811", json={"notes": notes})
@@ -355,11 +393,11 @@ def test_patch_persists_original_source_from_ordered_journey(tmp_path: Path) -> 
             stored = session.get(Lead, 100234811)
 
     assert response.status_code == 200
-    assert response.json()["source_channel"] == "LinkedIn"
-    assert response.json()["source_detail"] == "LinkedIn interaction"
+    assert response.json()["source_channel"] == channel
+    assert response.json()["source_detail"] == detail
     assert stored is not None
     assert stored.notes == notes
-    assert stored.source_channel == "LinkedIn"
+    assert stored.source_channel == channel
 
 
 @pytest.mark.parametrize(

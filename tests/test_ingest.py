@@ -46,6 +46,43 @@ def lead_count(app) -> int:
         return session.scalar(select(func.count()).select_from(Lead)) or 0
 
 
+def add_lead(
+    app,
+    *,
+    lead_id: int,
+    name: str,
+    email: str,
+    phone: str,
+    company: str = "Example New Labs",
+) -> None:
+    with app.state.database.session_factory() as session:
+        session.add(
+            Lead(
+                id=lead_id,
+                name=name,
+                email=email,
+                phone=phone,
+                company=company,
+                country="Indonesia",
+                status="New",
+                owner=None,
+                notes=None,
+                created_at=datetime(2026, 1, 1),
+                updated_at=None,
+                original_source=None,
+                source_channel=None,
+                source_detail=None,
+                name_key=normalize_name(name),
+                email_key=normalize_email(email),
+                phone_key=normalize_phone(phone),
+                email_domain=email_domain(email),
+                company_key=normalize_company(company),
+                form_data=None,
+            )
+        )
+        session.commit()
+
+
 def test_ingest_creates_a_normalized_new_lead(tmp_path: Path) -> None:
     app = build_test_app(tmp_path)
 
@@ -272,3 +309,100 @@ def test_ingest_rejects_fuzzy_only_likely_match(tmp_path: Path) -> None:
     assert detail["candidates"][0]["confidence"] == "likely"
     assert 0.75 <= detail["candidates"][0]["score"] < 0.90
     assert lead_count(app) == 2050
+
+
+def test_ingest_rejects_one_clear_candidate_competing_with_likely(tmp_path: Path) -> None:
+    app = build_test_app(tmp_path)
+    with TestClient(app) as client:
+        add_lead(
+            app,
+            lead_id=900000001,
+            name="Nora Example",
+            email="nora.clear@example-new.test",
+            phone="+62 812 555 0199",
+        )
+        add_lead(
+            app,
+            lead_id=900000002,
+            name="Nora Examples",
+            email="noraa@example-new.test",
+            phone="+62 812 555 9999",
+        )
+        before = {
+            lead_id: client.get(f"/leads/{lead_id}").json()
+            for lead_id in (900000001, 900000002)
+        }
+
+        response = client.post("/leads/ingest", json=submission())
+        after = {
+            lead_id: client.get(f"/leads/{lead_id}").json()
+            for lead_id in (900000001, 900000002)
+        }
+
+    assert response.status_code == 409
+    detail = response.json()["detail"]
+    assert detail["code"] == "ambiguous_match"
+    candidates = {item["lead_id"]: item for item in detail["candidates"]}
+    assert candidates[900000001]["confidence"] == "clear"
+    assert candidates[900000002]["confidence"] == "likely"
+    assert after == before
+
+
+def test_ingest_shared_email_remains_ambiguous_when_phone_narrows(tmp_path: Path) -> None:
+    app = build_test_app(tmp_path)
+    shared_email = "shared@example-new.test"
+    with TestClient(app) as client:
+        add_lead(
+            app,
+            lead_id=900000003,
+            name="Nora Example",
+            email=shared_email,
+            phone="+62 812 555 0199",
+        )
+        add_lead(
+            app,
+            lead_id=900000004,
+            name="Nora Example",
+            email=shared_email,
+            phone="+62 812 555 8888",
+        )
+        before = {
+            lead_id: client.get(f"/leads/{lead_id}").json()
+            for lead_id in (900000003, 900000004)
+        }
+
+        response = client.post(
+            "/leads/ingest", json=submission(email=shared_email)
+        )
+        after = {
+            lead_id: client.get(f"/leads/{lead_id}").json()
+            for lead_id in (900000003, 900000004)
+        }
+
+    assert response.status_code == 409
+    detail = response.json()["detail"]
+    assert detail["code"] == "ambiguous_match"
+    assert {item["lead_id"] for item in detail["candidates"]} == {
+        900000003,
+        900000004,
+    }
+    assert after == before
+
+
+def test_ingest_new_lead_replay_preserves_full_record(tmp_path: Path) -> None:
+    app = build_test_app(tmp_path)
+    payload = submission(message="Referred by Aiko Diop, warm intro.")
+
+    with TestClient(app) as client:
+        created = client.post("/leads/ingest", json=payload)
+        count_after_create = lead_count(app)
+        replay = client.post("/leads/ingest", json=payload)
+        count_after_replay = lead_count(app)
+
+    assert created.status_code == 201
+    assert replay.status_code == 200
+    assert created.json()["action"] == "created"
+    assert replay.json()["action"] == "updated"
+    assert replay.json()["lead"] == created.json()["lead"]
+    assert created.json()["lead"]["source_channel"] == "Referral"
+    assert count_after_create == count_after_replay == 2050

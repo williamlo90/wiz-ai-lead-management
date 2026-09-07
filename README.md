@@ -123,6 +123,8 @@ Ambiguous exact matches, conflicting email/phone identities, incompatible names,
 
 `POST /leads/extract-source` accepts `{"text": "..."}` and returns one of the seven required channels plus concise evidence-based detail. The extractor uses deterministic, case-insensitive rules for event booths, referrals, LinkedIn, organic Google discovery, website forms, and manual sales entry. It preserves stated event years, distinguishes QR scans from explicit scan negation, maps paid Google advertising and unnamed social posts to `Other`, and returns `Source unspecified` when there is no evidence. Operational sales updates and duplicate warnings are excluded from the derived detail while the original Notes remain unchanged.
 
+The observed `SFF` alias expands to `Singapore FinTech Festival`; a year is included only when it appears in the Notes.
+
 Event interactions and referral names are bounded to the relevant sentence or clause, and LinkedIn DM direction is included only when the Notes state it explicitly.
 
 When exactly two distinct sources are connected by one explicit `then`, `before`, or `after`, the extractor selects the stated original acquisition. Without explicit ordering, search/event evidence remains the acquisition rather than a later Website form transport; genuinely competing non-Website sources remain `Other` with ambiguity detail.
@@ -136,6 +138,7 @@ Fresh seed imports derive source fields immediately, and startup backfills only 
 ## Scope and Limitations
 
 - Matching scores are review heuristics, not calibrated probabilities or measured accuracy. Candidate generation can miss identities when every blocking key changes.
+- Matching normalization preserves Unicode display values but its comparison/token rules are ASCII-oriented; multilingual names and companies may require locale-aware normalization in a broader system.
 - Ambiguous ingestion requires manual resolution; there is no merge or conflict-resolution endpoint.
 - Replay protection prevents duplicate lead/message changes for the demonstrated flow, but it is not an exactly-once delivery system.
 - Source extraction recognizes the supplied text families and returns grounded detail; it is not a general natural-language attribution model.

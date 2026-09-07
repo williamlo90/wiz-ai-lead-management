@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
@@ -120,6 +121,42 @@ def test_scoring_handles_known_matches_typos_and_false_positive_guards(tmp_path:
     assert typo_match.confidence == "likely"
     assert missing_name.score == 0.85
     assert missing_name.confidence == "likely"
+
+
+@pytest.mark.parametrize(
+    ("right_name", "expected_score", "expected_confidence", "incompatible"),
+    [
+        ("abcdefghix", 0.95, "clear", False),
+        ("abcdefghxy", 0.85, "likely", False),
+        ("abcdefgxyz", 0.69, "insufficient", True),
+    ],
+)
+def test_scoring_name_thresholds_and_incompatible_guard(
+    right_name: str,
+    expected_score: float,
+    expected_confidence: str,
+    incompatible: bool,
+) -> None:
+    left = make_lead(
+        1,
+        name="abcdefghij",
+        email="same@example.com",
+        phone="+1 212 555 0101",
+        company="Example Labs",
+    )
+    right = make_lead(
+        2,
+        name=right_name,
+        email="same@example.com",
+        phone="+1 212 555 9999",
+        company="Example Labs",
+    )
+
+    assessment = score_candidate(left, right)
+
+    assert assessment.score == expected_score
+    assert assessment.confidence == expected_confidence
+    assert ("incompatible given names" in assessment.reasons) is incompatible
 
 
 def test_dedupe_endpoint_is_ranked_limited_deterministic_and_read_only(tmp_path: Path) -> None:

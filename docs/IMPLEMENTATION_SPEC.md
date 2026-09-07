@@ -1,12 +1,14 @@
 # Implementation Specification
 
-Technical contract for the take-home work. Milestones 1-7 are COMPLETED and accepted as the baseline. Milestone 8 dashboard work is COMPLETED and awaiting user review.
+Technical contract for the take-home work. Implementation milestones 1-8 are completed and accepted. Later remediation status is tracked in `REMEDIATION_PLAN.md`.
 
 Authority: `ASSIGNMENT.md` defines employer requirements; this document resolves implementation choices; `../PLAN.md` defines order and budget. Dataset evidence comes from `DATASET_ANALYSIS.md`, checked against the current code where relevant. Choices below are project assumptions unless explicitly attributed to the assignment.
 
-## 1. Current Architecture and Milestone 1
+## 1. Historical Milestone 1 Architecture Snapshot
 
-Actual stack: Python >=3.11, FastAPI, Pydantic 2, SQLAlchemy 2, SQLite, Uvicorn, pytest, and HTTPX/TestClient. SQLAlchemy was explicitly requested for Milestone 1 and supersedes the earlier PLAN choice of direct `sqlite3`. RapidFuzz is planned for Milestone 3, not installed as a project dependency yet. No LLM is required: the assignment permits fuzzy matching and rules.
+This section records the foundation as it existed at Milestone 1. Later sections and the current code describe the completed business endpoints and dependencies.
+
+Milestone 1 stack: Python >=3.11, FastAPI, Pydantic 2, SQLAlchemy 2, SQLite, Uvicorn, pytest, and HTTPX/TestClient. SQLAlchemy was explicitly requested for Milestone 1 and superseded the earlier PLAN choice of direct `sqlite3`. RapidFuzz was added in Milestone 3. No LLM is required: the assignment permits fuzzy matching and rules.
 
 | Existing file | Responsibility |
 | --- | --- |
@@ -23,7 +25,7 @@ Keep this structure and synchronous SQLAlchemy sessions. Additional route or fea
 
 Startup creates tables and imports the seed automatically only when `leads` is empty. Default database is repository-root `leads.db`; default seed is `data/leads_seed.csv`. `DATABASE_URL` and `SEED_DATA_PATH`, or explicit factory arguments, override defaults. Existing nonempty databases are left untouched even if the seed file is unavailable. Engine disposal occurs on normal application shutdown.
 
-Implemented responses: `/` returns the service name; `/health` returns `{"status":"ok","lead_count":2049}` for the unmodified seed. `/docs` and `/openapi.json` are available. Business endpoints are intentionally absent.
+At this historical milestone, `/` returned the service name, `/health` returned `{"status":"ok","lead_count":2049}` for the unmodified seed, and business endpoints had not yet been added. The completed application now includes the business endpoints specified in later sections.
 
 ### Milestone 1 Acceptance and Evidence
 

@@ -141,7 +141,7 @@ def _event_result(text: str) -> SourceResult | None:
 
 def _referral_result(text: str) -> SourceResult | None:
     match = re.search(
-        r"\breferred\s+by\s+(.+?)(?=,|[.;\n]|\s+then\b|"
+        r"\breferred\s+by\s+(.+?)(?=,|[.;\n]|\s+(?:then|before|after)\b|"
         r"\s+and\s+(?:connected|contacted|met|called|emailed)\b|$)",
         text,
         re.IGNORECASE,
@@ -211,7 +211,7 @@ def _organic_result(text: str) -> SourceResult | None:
 def _website_result(text: str) -> SourceResult | None:
     page = re.search(
         r"\bfill(?:ed|ing) out the form on the\s+(.+?)"
-        r"(?=\s+(?:before|after|then)\b|[.;\n]|$)",
+        r"(?=\s+(?:before|after|then)\b|[,.;\n]|$)",
         text,
         re.IGNORECASE,
     )
@@ -308,6 +308,14 @@ def _ordered_original_source(
     positioned.sort(key=lambda item: item[0][0])
 
     (first_span, first), (second_span, second) = positioned
+    leading_connector = re.fullmatch(
+        r"\s*(after|before)\s+", text[: first_span[0]], re.IGNORECASE
+    )
+    if leading_connector:
+        if leading_connector.group(1).casefold() == "after":
+            return first
+        return second
+
     between = text[first_span[1] : second_span[0]]
     connectors = re.findall(r"\b(then|before|after)\b", between, re.IGNORECASE)
     if len(connectors) != 1:
