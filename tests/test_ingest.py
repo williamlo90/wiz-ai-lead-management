@@ -60,7 +60,10 @@ def test_ingest_creates_a_normalized_new_lead(tmp_path: Path) -> None:
     assert body["lead"]["status"] == "New"
     assert body["lead"]["owner"] is None
     assert body["lead"]["original_source"] is None
-    assert body["lead"]["source_channel"] is None
+    assert body["lead"]["source_channel"] == "Website"
+    assert body["lead"]["source_detail"] == (
+        "Website form - form: Demo Request; page: /request-demo"
+    )
     assert body["lead"]["created_at"] == "2026-07-01T05:00:00Z"
     assert body["lead"]["updated_at"] is None
     assert body["lead"]["notes"] == "Interested in analytics.\n\nPlease call next week."
@@ -98,6 +101,8 @@ def test_ingest_updates_clear_identity_and_replay_is_a_no_op(tmp_path: Path) -> 
     assert first_lead["owner"] == original["owner"]
     assert first_lead["email"] == original["email"]
     assert first_lead["phone"] == original["phone"]
+    assert first_lead["source_channel"] == "Event"
+    assert first_lead["source_detail"] == "SaaStr Annual - Booth QR Code"
     assert first_lead["notes"] == (
         f'{original["notes"].rstrip()}\n\nFirst line.\n\nSecond line.'
     )

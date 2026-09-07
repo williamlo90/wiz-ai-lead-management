@@ -88,8 +88,8 @@ def test_detail_and_patch_validation_preserve_state_on_failure(app_client) -> No
     assert changed["status"] == "Qualified"
     assert changed["owner"] is None
     assert changed["notes"] == "First line.\n\nSecond  line."
-    assert changed["source_channel"] is None
-    assert changed["source_detail"] is None
+    assert changed["source_channel"] == "Other"
+    assert changed["source_detail"] == "Source unspecified"
     assert changed["updated_at"].endswith("Z")
 
     for payload in ({}, {"status": None}, {"status": "invalid"}, {"email": "new@example.com"}):

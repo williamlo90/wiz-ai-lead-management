@@ -18,6 +18,7 @@ from app.normalization import (
     normalize_phone,
 )
 from app.schemas import IngestResponse, WebsiteSubmission
+from app.source_extraction import UNSPECIFIED_DETAIL, extract_source
 
 
 router = APIRouter(prefix="/leads", tags=["leads"])
@@ -30,6 +31,12 @@ def _utc_string(value: datetime) -> str:
 
 
 def _submission_values(submission: WebsiteSubmission) -> dict[str, object]:
+    source = extract_source(
+        submission.message,
+        form_name=submission.form_name,
+        page_url=submission.page_url,
+        use_website_fallback=True,
+    )
     return {
         "name": submission.name,
         "company": submission.company,
@@ -42,8 +49,8 @@ def _submission_values(submission: WebsiteSubmission) -> dict[str, object]:
         "created_at": submission.submitted_at,
         "updated_at": None,
         "original_source": None,
-        "source_channel": None,
-        "source_detail": None,
+        "source_channel": source.channel,
+        "source_detail": source.detail,
         "email_key": normalize_email(submission.email),
         "phone_key": normalize_phone(submission.phone),
         "email_domain": email_domain(submission.email),
@@ -144,6 +151,12 @@ def _update_existing(
     incoming: Lead,
 ) -> Lead:
     changed = False
+    previous_notes_source = extract_source(lead.notes)
+    website_was_fallback = (
+        lead.source_channel == "Website"
+        and lead.form_data is not None
+        and previous_notes_source.detail == UNSPECIFIED_DETAIL
+    )
     for field in ("name", "company", "email", "phone", "country"):
         if not getattr(lead, field) and getattr(incoming, field):
             setattr(lead, field, getattr(incoming, field))
@@ -158,6 +171,21 @@ def _update_existing(
 
     lead.notes, notes_changed = _append_distinct_message(lead.notes, incoming.notes)
     changed = changed or notes_changed
+
+    incoming_source = extract_source(incoming.notes)
+    source_is_replaceable = (
+        lead.source_channel is None
+        or lead.source_detail in {None, UNSPECIFIED_DETAIL}
+        or website_was_fallback
+    )
+    if incoming_source.detail != UNSPECIFIED_DETAIL and source_is_replaceable:
+        if (
+            lead.source_channel != incoming_source.channel
+            or lead.source_detail != incoming_source.detail
+        ):
+            lead.source_channel = incoming_source.channel
+            lead.source_detail = incoming_source.detail
+            changed = True
 
     current_submission = _stored_submission_time(lead.form_data)
     incoming_submission = _stored_submission_time(incoming.form_data)

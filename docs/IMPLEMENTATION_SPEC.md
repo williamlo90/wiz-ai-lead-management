@@ -1,6 +1,6 @@
 # Implementation Specification
 
-Technical contract for the remaining take-home work. Milestones 1-3 are COMPLETED and accepted as the baseline. Milestone 4 is COMPLETED and awaiting user review; Milestones 5-8 are not implemented.
+Technical contract for the remaining take-home work. Milestones 1-4 are COMPLETED and accepted as the baseline. Milestone 5 is COMPLETED and awaiting user review; Milestones 6-8 are not implemented.
 
 Authority: `ASSIGNMENT.md` defines employer requirements; this document resolves implementation choices; `../PLAN.md` defines order and budget. Dataset evidence comes from `DATASET_ANALYSIS.md`, checked against the current code where relevant. Choices below are project assumptions unless explicitly attributed to the assignment.
 
@@ -260,14 +260,14 @@ Done when:
 - [x] Replay preserves count/notes/timestamps; a distinct multiline message appends intact; status/owner/contact preservation and submission-time metadata ordering are verified.
 - [x] Responses and status codes are documented; extraction remains pending until Milestone 5.
 
-### Milestone 5: Source Extraction and API/Import/Update Integration (1.00h)
+### Milestone 5: Source Extraction and API/Import/Update Integration (1.00h) - COMPLETED
 
 Done when:
 
-- [ ] Extractor and stateless endpoint return only the seven channels with grounded detail and explicit unknown handling.
-- [ ] Tests cover QR affirmation/negation, referral, LinkedIn, paid/organic Google, unnamed social platform, unknown/conflicting text, and year preservation.
-- [ ] Fresh import and existing-database null-source backfill work without reseeding or overwriting edits; repeated startup is stable.
-- [ ] Ingest defaults, generic-follow-up preservation, PATCH replacement/clearing, and immediate persisted source consistency are verified. README explains rules and taxonomy choices.
+- [x] Extractor and stateless endpoint return only the seven channels with grounded detail and explicit unknown handling.
+- [x] Tests cover QR affirmation/negation, referral, LinkedIn, paid/organic Google, unnamed social platform, unknown/conflicting text, and year preservation.
+- [x] Fresh import and existing-database null-source backfill work without reseeding or overwriting edits; repeated startup is stable.
+- [x] Ingest defaults, generic-follow-up preservation, PATCH replacement/clearing, and immediate persisted source consistency are verified. README explains rules and taxonomy choices.
 
 ### Milestone 6: Integration Tests and Fixes (0.75h)
 

@@ -210,6 +210,26 @@ class IngestResponse(StrictSchema):
     lead: LeadRead
 
 
+SourceChannel = Literal[
+    "Website",
+    "Event",
+    "LinkedIn",
+    "Organic Search",
+    "Referral",
+    "Manual/Sales",
+    "Other",
+]
+
+
+class SourceExtractionRequest(StrictSchema):
+    text: str
+
+
+class SourceExtractionResponse(StrictSchema):
+    channel: SourceChannel
+    detail: str = Field(max_length=500)
+
+
 class HealthResponse(BaseModel):
     status: str
     lead_count: int

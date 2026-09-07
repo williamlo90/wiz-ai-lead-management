@@ -18,6 +18,7 @@ from app.normalization import (
     optional_text,
     parse_seed_datetime,
 )
+from app.source_extraction import extract_source
 
 
 def load_seed_data(session: Session, csv_path: Path) -> int:
@@ -39,6 +40,8 @@ def load_seed_data(session: Session, csv_path: Path) -> int:
         created_at = parse_seed_datetime(row["Create Date"])
         if created_at is None:
             raise ValueError(f'Record {row["Record ID"]} has no creation date')
+        notes = optional_free_text(row["Notes"])
+        source = extract_source(notes)
 
         leads.append(
             Lead(
@@ -50,12 +53,12 @@ def load_seed_data(session: Session, csv_path: Path) -> int:
                 country=normalize_country(row["Country/Region"]),
                 status=normalize_status(row["Lead Status"]),
                 owner=optional_text(row["Contact Owner"]),
-                notes=optional_free_text(row["Notes"]),
+                notes=notes,
                 created_at=created_at,
                 updated_at=parse_seed_datetime(row["Last Modified Date"]),
                 original_source=optional_text(row["Original Source"]),
-                source_channel=None,
-                source_detail=None,
+                source_channel=source.channel,
+                source_detail=source.detail,
                 email_key=normalize_email(email),
                 phone_key=normalize_phone(phone),
                 email_domain=email_domain(email),

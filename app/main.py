@@ -12,6 +12,8 @@ from app.leads import router as leads_router
 from app.models import Lead
 from app.schemas import HealthResponse
 from app.seed import load_seed_data
+from app.source_extraction import backfill_missing_sources
+from app.source_extraction import router as source_extraction_router
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -33,6 +35,7 @@ def create_app(
         database.create_tables()
         with database.session_factory() as session:
             load_seed_data(session, selected_seed_path)
+            backfill_missing_sources(session)
         yield
         database.engine.dispose()
 
@@ -44,6 +47,7 @@ def create_app(
     app.state.database = database
     app.include_router(ingest_router)
     app.include_router(deduplication_router)
+    app.include_router(source_extraction_router)
     app.include_router(leads_router)
 
     @app.get("/", include_in_schema=False)

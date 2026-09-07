@@ -10,6 +10,7 @@ from app.database import get_session
 from app.models import Lead
 from app.normalization import as_utc, normalize_status
 from app.schemas import LeadListResponse, LeadRead, LeadUpdate
+from app.source_extraction import extract_source
 
 
 router = APIRouter(prefix="/leads", tags=["leads"])
@@ -176,8 +177,9 @@ def update_lead(
             notes_changed = notes_changed or field == "notes"
 
     if notes_changed:
-        lead.source_channel = None
-        lead.source_detail = None
+        source = extract_source(lead.notes)
+        lead.source_channel = source.channel
+        lead.source_detail = source.detail
     if changed:
         lead.updated_at = datetime.now(timezone.utc)
         session.commit()
