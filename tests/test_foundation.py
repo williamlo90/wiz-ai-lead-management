@@ -76,3 +76,21 @@ def test_openapi_contains_milestone_two_endpoints(tmp_path: Path) -> None:
         "/leads/{lead_id}",
     }
     assert "201" in schema["paths"]["/leads/ingest"]["post"]["responses"]
+
+
+def test_swagger_ui_uses_local_favicon(tmp_path: Path) -> None:
+    app = build_test_app(tmp_path)
+
+    with TestClient(app) as client:
+        docs_response = client.get("/docs")
+        favicon_response = client.get("/static/favicon.svg")
+        stylesheet_response = client.get("/static/swagger-ui.css")
+
+    assert docs_response.status_code == 200
+    assert 'href="/static/favicon.svg"' in docs_response.text
+    assert "fastapi.tiangolo.com/img/favicon.png" not in docs_response.text
+    assert favicon_response.status_code == 200
+    assert favicon_response.headers["content-type"].startswith("image/svg+xml")
+    assert stylesheet_response.status_code == 200
+    assert ".view-line-link.copy-to-clipboard" in stylesheet_response.text
+    assert "display: none" in stylesheet_response.text

@@ -3,6 +3,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select
 
 from app.database import Database
@@ -20,6 +23,7 @@ from app.source_extraction import router as source_extraction_router
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DATABASE_URL = f"sqlite:///{(PROJECT_ROOT / 'leads.db').as_posix()}"
 DEFAULT_SEED_PATH = PROJECT_ROOT / "data" / "leads_seed.csv"
+STATIC_DIRECTORY = PROJECT_ROOT / "app" / "static"
 
 
 def create_app(
@@ -46,8 +50,10 @@ def create_app(
         title="Wiz AI Lead Management",
         version="0.1.0",
         lifespan=lifespan,
+        docs_url=None,
     )
     app.state.database = database
+    app.mount("/static", StaticFiles(directory=STATIC_DIRECTORY), name="static")
     app.include_router(dashboard_router)
     app.include_router(ingest_router)
     app.include_router(deduplication_router)
@@ -57,6 +63,15 @@ def create_app(
     @app.get("/", include_in_schema=False)
     def root() -> dict[str, str]:
         return {"service": "wiz-ai-lead-management"}
+
+    @app.get("/docs", include_in_schema=False)
+    def swagger_ui() -> HTMLResponse:
+        return get_swagger_ui_html(
+            openapi_url=app.openapi_url,
+            title=f"{app.title} - Swagger UI",
+            swagger_css_url="/static/swagger-ui.css",
+            swagger_favicon_url="/static/favicon.svg",
+        )
 
     @app.get("/health", response_model=HealthResponse)
     def health() -> HealthResponse:

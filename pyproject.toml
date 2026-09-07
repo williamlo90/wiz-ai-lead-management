@@ -24,5 +24,8 @@ test = [
 [tool.setuptools.packages.find]
 include = ["app*"]
 
+[tool.setuptools.package-data]
+app = ["static/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
