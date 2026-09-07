@@ -4,7 +4,7 @@ Small FastAPI service for importing and managing the supplied CRM-style lead dat
 
 ## Setup
 
-Requires Python 3.11 or newer.
+Requires Python 3.11 or newer. Clone or download this repository and run the commands below from its root directory.
 
 ```powershell
 python -m venv .venv
@@ -21,11 +21,15 @@ Run the service:
 
 Open `http://127.0.0.1:8000/docs` for the generated API documentation.
 
+Startup creates `leads.db` in the repository root and imports the supplied seed automatically. No separate database service or API key is required.
+
 Run tests:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
 ```
+
+Tests use temporary SQLite databases and cover ambiguous matches, conflicting identifiers, ingest replay, source attribution, filtered CSV export, and persistence across restarts.
 
 ## Available API
 
@@ -42,6 +46,8 @@ Run tests:
 Filters combine with AND. Search is a case-insensitive literal substring across name, company, and email. Export returns the complete filtered view rather than one paginated list page.
 
 Configuration can override the defaults with `DATABASE_URL` and `SEED_DATA_PATH`. SQLite and synchronous SQLAlchemy keep the local take-home setup small and persistent.
+
+For a custom SQLite path, create its parent directory first. The paths below are examples to replace with your own.
 
 ```powershell
 $env:DATABASE_URL = "sqlite:///C:/temp/wiz-leads.db"
@@ -64,6 +70,15 @@ PATCH /leads/100234811
 Content-Type: application/json
 
 {"status":"Qualified","owner":"Marcus Wong","notes":"Referred by Aiko Diop, warm intro."}
+```
+
+Request ranked duplicate pairs for review:
+
+```http
+POST /leads/dedupe-candidates
+Content-Type: application/json
+
+{"min_score":0.75,"limit":10}
 ```
 
 Extract acquisition source without storing anything:
@@ -103,6 +118,8 @@ Content-Type: application/json
 
 On first startup, an empty database imports all 2,049 seed rows in one transaction while retaining their original record IDs. A nonempty database is never reimported or overwritten on restart. Existing databases receive a narrow backfill only when derived source fields are missing.
 
+The model keeps contact details, status/owner, Notes, timestamps, raw Original Source, derived attribution, and form metadata. Names use `Full Name` when populated, otherwise combined `First Name` and `Last Name`. Unused CRM columns such as revenue, consent, job title, city, and lead score are omitted from storage because they are not needed by the required workflows; the original CSV remains available.
+
 Display values retain useful source formatting. Separate matching keys casefold email/name, keep complete phone digits including country code, and normalize company punctuation and whitespace. Status is mapped to the seven observed canonical values; owner whitespace and country casing are normalized. Email and phone are deliberately not unique because duplicate seed records must remain representable.
 
 The importer explicitly supports `YYYY-MM-DD`, `M/D/YYYY`, and ISO UTC timestamps. Date-only values are stored as UTC midnight by convention, not as observed event times. Blank modification dates remain null; API timestamps are serialized with `Z`. Raw seed files are never rewritten.
@@ -110,6 +127,8 @@ The importer explicitly supports `YYYY-MM-DD`, `M/D/YYYY`, and ISO UTC timestamp
 ## Duplicate Candidates
 
 The deduplication endpoint first blocks records on normalized email, phone, email domain, or company, then applies explainable RapidFuzz name/company rules. On the supplied seed this evaluates 5,047 candidate pairs instead of all 2,098,176 possible pairs. Results contain a heuristic score, confidence band, and evidence such as matching normalized contact details or conflicting names.
+
+Fuzzy matching suits the observed spelling, initials, and contact-format variations while keeping each decision explainable and inexpensive. Blocking keeps comparisons tractable for this dataset without model inference or an external service. Results are pairs ranked by descending score, with lead IDs breaking ties; `total_matches` counts qualifying pairs before the result limit.
 
 Scores are conservative decision rules, not calibrated probabilities. Similar company/domain values alone cannot produce a match, missing fields do not count as agreement, and incompatible fully spelled given names prevent false positives. The endpoint is read-only and does not merge records.
 
@@ -121,7 +140,11 @@ Ambiguous exact matches, conflicting email/phone identities, incompatible names,
 
 ## Source Extraction
 
+Rules and regular expressions were chosen because the supplied Notes contain recurring acquisition patterns. They provide reproducible, inspectable results without model credentials or inference cost, with limited coverage of unfamiliar phrasing as the tradeoff. The allowed channels are `Website`, `Event`, `LinkedIn`, `Organic Search`, `Referral`, `Manual/Sales`, and `Other`.
+
 `POST /leads/extract-source` accepts `{"text": "..."}` and returns one of the seven required channels plus concise evidence-based detail. The extractor uses deterministic, case-insensitive rules for event booths, referrals, LinkedIn, organic Google discovery, website forms, and manual sales entry. It preserves stated event years, distinguishes QR scans from explicit scan negation, maps paid Google advertising and unnamed social posts to `Other`, and returns `Source unspecified` when there is no evidence. Operational sales updates and duplicate warnings are excluded from the derived detail while the original Notes remain unchanged.
+
+Raw `Original Source` is retained for context, but extraction uses Notes because the CRM label may be blank or too generic to establish acquisition details.
 
 The observed `SFF` alias expands to `Singapore FinTech Festival`; a year is included only when it appears in the Notes.
 
@@ -143,7 +166,7 @@ Fresh seed imports derive source fields immediately, and startup backfills only 
 - Replay protection prevents duplicate lead/message changes for the demonstrated flow, but it is not an exactly-once delivery system.
 - Source extraction recognizes the supplied text families and returns grounded detail; it is not a general natural-language attribution model.
 - SQLite and synchronous request handling are intentional for this local take-home. Authentication, queues, deployment, monitoring, and a frontend are out of scope.
-- No LLM was used, so there is no provider, model, credential, or API cost.
+- The application makes no LLM calls and uses no local or mocked language model. No runtime model provider or API key is required; LLM API cost is $0.
 
 ## Next Steps
 
