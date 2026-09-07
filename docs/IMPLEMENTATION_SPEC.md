@@ -1,6 +1,6 @@
 # Implementation Specification
 
-Technical contract for the remaining take-home work. Milestones 1-5 are COMPLETED and accepted as the baseline. Milestone 6 is COMPLETED and awaiting user review; Milestones 7-8 are not implemented.
+Technical contract for the remaining take-home work. Milestones 1-6 are COMPLETED and accepted as the baseline. Milestone 7 is COMPLETED and awaiting user review; Milestone 8 is not implemented.
 
 Authority: `ASSIGNMENT.md` defines employer requirements; this document resolves implementation choices; `../PLAN.md` defines order and budget. Dataset evidence comes from `DATASET_ANALYSIS.md`, checked against the current code where relevant. Choices below are project assumptions unless explicitly attributed to the assignment.
 
@@ -278,15 +278,15 @@ Done when:
 - [x] Test fresh-start failure/rollback with a small malformed seed and persistence across restart after a real edit. Check normalized status totals and null-date behavior against the analysis.
 - [x] Keep fixes within observed correctness/integration issues; no unrelated restructuring or test-count target.
 
-### Milestone 7: README and Fresh-Start Demo Verification (0.50h)
+### Milestone 7: README and Fresh-Start Demo Verification (0.50h) - COMPLETED
 
 Done when:
 
-- [ ] Verify a fresh virtual environment installation from repository metadata and a fresh temporary database; do not delete the user's local database or edits.
-- [ ] Run documented commands, the complete suite, and a real local server smoke test for implemented endpoints; check restart preservation and import count.
-- [ ] README covers setup, environment overrides, example requests, import/date policy, matching/extraction reasoning, conflict behavior, limitations, and next steps.
-- [ ] Describe fuzzy/rules implementation truthfully; no LLM is used or billed. If an approved later change uses an LLM, document provider/model/cost.
-- [ ] Run/dependency commands are repeatable, submission contains source/tests/data/docs but excludes environments/databases/caches, and future-production ideas are clearly separate from current behavior.
+- [x] Verify a fresh virtual environment installation from repository metadata and a fresh temporary database; do not delete the user's local database or edits.
+- [x] Run documented commands, the complete suite, and a real local server smoke test for implemented endpoints; check restart preservation and import count.
+- [x] README covers setup, environment overrides, example requests, import/date policy, matching/extraction reasoning, conflict behavior, limitations, and next steps.
+- [x] Describe fuzzy/rules implementation truthfully; no LLM is used or billed. If an approved later change uses an LLM, document provider/model/cost.
+- [x] Run/dependency commands are repeatable, submission contains source/tests/data/docs but excludes environments/databases/caches, and future-production ideas are clearly separate from current behavior.
 
 ### Milestone 8: Optional Dashboard or Contingency (0.50h)
 
