@@ -1,6 +1,6 @@
 # Implementation Specification
 
-Technical contract for the remaining take-home work. Milestone 1 is COMPLETED and accepted as the baseline. Milestone 2 is COMPLETED and awaiting user review; Milestones 3-8 are not implemented. This specification is proposed for user review; creating it does not authorize the next milestone or a commit.
+Technical contract for the remaining take-home work. Milestones 1-2 are COMPLETED and accepted as the baseline. Milestone 3 is COMPLETED and awaiting user review; Milestones 4-8 are not implemented. This specification is proposed for user review; creating it does not authorize the next milestone or a commit.
 
 Authority: `ASSIGNMENT.md` defines employer requirements; this document resolves implementation choices; `../PLAN.md` defines order and budget. Dataset evidence comes from `DATASET_ANALYSIS.md`, checked against the current code where relevant. Choices below are project assumptions unless explicitly attributed to the assignment.
 
@@ -242,14 +242,14 @@ Done when:
 - [x] Tests cover combined filters/search, literal wildcard characters, no results/missing ID, pagination/export parity, CSV comma/quote/newline round-trip, and timestamp round-trip policy. Existing foundation checks still pass.
 - [x] README begins with working setup/run/test commands and the currently available routes.
 
-### Milestone 3: Candidate Generation and Fuzzy Scoring (1.50h)
+### Milestone 3: Candidate Generation and Fuzzy Scoring (1.50h) - COMPLETED
 
 Done when:
 
-- [ ] RapidFuzz and shared candidate/scoring functions implement Section 5; endpoint output is ranked and explained, with comparison count.
-- [ ] Tests confirm 5,047 candidate pairs for the unchanged seed/current keys; no self/repeated pairs; empty identifiers create no shared block; every scored pair belongs to generated candidates.
-- [ ] Reviewed formatting/typo/initial positives and similar-looking negatives exercise threshold guards. Score is never represented as calibrated accuracy.
-- [ ] Threshold boundaries, missing evidence, deterministic ordering/limit, and absence of database mutation are checked. Document matching decisions and known recall limits.
+- [x] RapidFuzz and shared candidate/scoring functions implement Section 5; endpoint output is ranked and explained, with comparison count.
+- [x] Tests confirm 5,047 candidate pairs for the unchanged seed/current keys; no self/repeated pairs; empty identifiers create no shared block; every scored pair belongs to generated candidates.
+- [x] Reviewed formatting/typo/initial positives and similar-looking negatives exercise threshold guards. Score is never represented as calibrated accuracy.
+- [x] Threshold boundaries, missing evidence, deterministic ordering/limit, and absence of database mutation are checked. Document matching decisions and known recall limits.
 
 ### Milestone 4: Ingest Create/Update/Conflict Behavior (0.75h)
 

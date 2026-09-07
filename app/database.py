@@ -1,5 +1,6 @@
 from collections.abc import Generator
 
+from fastapi import Request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
@@ -28,3 +29,6 @@ class Database:
         with self.session_factory() as session:
             yield session
 
+
+def get_session(request: Request) -> Generator[Session, None, None]:
+    yield from request.app.state.database.session()

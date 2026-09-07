@@ -1,12 +1,12 @@
 import csv
 import io
-from collections.abc import Generator
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
 from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
+from app.database import get_session
 from app.models import Lead
 from app.normalization import as_utc, normalize_status
 from app.schemas import LeadListResponse, LeadRead, LeadUpdate
@@ -30,10 +30,6 @@ EXPORT_FIELDS = (
     "source_channel",
     "source_detail",
 )
-
-
-def get_session(request: Request) -> Generator[Session, None, None]:
-    yield from request.app.state.database.session()
 
 
 def normalize_query(value: str | None) -> str | None:

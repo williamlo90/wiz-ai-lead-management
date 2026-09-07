@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from urllib.parse import urlsplit
 
@@ -185,6 +185,24 @@ class WebsiteSubmission(StrictSchema):
         if value is not None and not isinstance(value, str):
             raise ValueError("message must be a string or null")
         return optional_free_text(value)
+
+
+class DedupeRequest(StrictSchema):
+    min_score: float = Field(default=0.75, ge=0.75, le=1.0)
+    limit: int = Field(default=100, ge=1, le=500)
+
+
+class DedupeCandidate(StrictSchema):
+    lead_ids: tuple[int, int]
+    score: float
+    confidence: Literal["clear", "likely"]
+    reasons: list[str]
+
+
+class DedupeResponse(StrictSchema):
+    candidates: list[DedupeCandidate]
+    candidate_pairs_evaluated: int
+    total_matches: int
 
 
 class HealthResponse(BaseModel):
