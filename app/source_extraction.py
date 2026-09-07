@@ -209,7 +209,12 @@ def _organic_result(text: str) -> SourceResult | None:
 
 
 def _website_result(text: str) -> SourceResult | None:
-    page = re.search(r"\bfilled out the form on the\s+([^.]+)", text, re.IGNORECASE)
+    page = re.search(
+        r"\bfill(?:ed|ing) out the form on the\s+(.+?)"
+        r"(?=\s+(?:before|after|then)\b|[.;\n]|$)",
+        text,
+        re.IGNORECASE,
+    )
     if not page:
         return None
     return SourceResult("Website", f"Form submission - {page.group(1).strip()}")
@@ -251,6 +256,67 @@ def _website_fallback(form_name: str | None, page_url: str | None) -> SourceResu
     return SourceResult("Website", detail[:500])
 
 
+def _evidence_span(text: str, result: SourceResult) -> tuple[int, int] | None:
+    if result.channel == "Event":
+        match = EVENT_PATTERN.search(text)
+    elif result.channel == "Referral":
+        match = re.search(r"\breferred\s+by\b", text, re.IGNORECASE)
+    elif result.channel == "LinkedIn":
+        match = re.search(r"\blinked\s*in\b", text, re.IGNORECASE)
+    elif result.channel == "Organic Search":
+        match = re.search(
+            r"\borganic\s+google\s+search\b|\bgoogled\s+us\b",
+            text,
+            re.IGNORECASE,
+        )
+    elif result.channel == "Website":
+        match = re.search(
+            r"\bfill(?:ed|ing) out the form\b", text, re.IGNORECASE
+        )
+    elif result.channel == "Manual/Sales":
+        match = re.search(
+            r"\binbound\s+phone\s+call\b|\bcold\s+outreach\b|\bmanual(?:ly)?\b",
+            text,
+            re.IGNORECASE,
+        )
+    elif result.detail.startswith("Paid Google advertising"):
+        match = re.search(r"\bgoogle\s+ad\b|\bpaid\s+google\b", text, re.IGNORECASE)
+    elif result.detail.startswith("Social post interaction"):
+        match = re.search(r"\bsaw our post\b|\bpost\b", text, re.IGNORECASE)
+    elif result.detail == "Walk-in contact":
+        match = re.search(r"\bwalked into\b|\bwalk-in\b", text, re.IGNORECASE)
+    elif result.detail == "General info@ inbox":
+        match = re.search(r"\bgeneral\s+info@\s+inbox\b", text, re.IGNORECASE)
+    else:
+        match = None
+    return match.span() if match else None
+
+
+def _ordered_original_source(
+    text: str, results: list[SourceResult]
+) -> SourceResult | None:
+    by_channel = {result.channel: result for result in results}
+    if len(by_channel) != 2:
+        return None
+
+    positioned = []
+    for result in by_channel.values():
+        span = _evidence_span(text, result)
+        if span is None:
+            return None
+        positioned.append((span, result))
+    positioned.sort(key=lambda item: item[0][0])
+
+    (first_span, first), (second_span, second) = positioned
+    between = text[first_span[1] : second_span[0]]
+    connectors = re.findall(r"\b(then|before|after)\b", between, re.IGNORECASE)
+    if len(connectors) != 1:
+        return None
+    if connectors[0].casefold() == "after":
+        return second
+    return first
+
+
 def extract_source(
     text: str | None,
     *,
@@ -271,6 +337,9 @@ def extract_source(
         _other_contact_result,
     )
     results = [result for extractor in extractors if (result := extractor(cleaned))]
+
+    if ordered_result := _ordered_original_source(cleaned, results):
+        return ordered_result
 
     non_website = [result for result in results if result.channel != "Website"]
     channels = list(dict.fromkeys(result.channel for result in non_website))

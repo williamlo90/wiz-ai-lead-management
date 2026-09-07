@@ -125,6 +125,8 @@ Ambiguous exact matches, conflicting email/phone identities, incompatible names,
 
 Event interactions and referral names are bounded to the relevant sentence or clause, and LinkedIn DM direction is included only when the Notes state it explicitly.
 
+When exactly two distinct sources are connected by one explicit `then`, `before`, or `after`, the extractor selects the stated original acquisition. Without explicit ordering, search/event evidence remains the acquisition rather than a later Website form transport; genuinely competing non-Website sources remain `Other` with ambiguity detail.
+
 Fresh seed imports derive source fields immediately, and startup backfills only missing derived fields in existing databases. PATCH recomputes attribution when Notes are replaced. Ingest prefers explicit message evidence, uses the known form as a Website fallback for new leads, and preserves established acquisition evidence through generic follow-ups. These are transparent heuristics rather than externally verified marketing attribution; no LLM or paid API is used.
 
 ## Dashboard

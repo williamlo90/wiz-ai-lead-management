@@ -127,6 +127,66 @@ def test_person_and_direction_details_require_explicit_evidence(
     assert extract_source(text).detail == detail
 
 
+@pytest.mark.parametrize(
+    ("text", "channel", "detail"),
+    [
+        (
+            "Referred by Aiko Diop, then connected on LinkedIn.",
+            "Referral",
+            "Referred by Aiko Diop",
+        ),
+        (
+            "Connected on LinkedIn, then referred by Aiko Diop.",
+            "LinkedIn",
+            "LinkedIn interaction",
+        ),
+        (
+            "Filled out the form on the homepage before meeting us at the "
+            "SaaStr Annual booth.",
+            "Website",
+            "Form submission - homepage",
+        ),
+        (
+            "Met us at the SaaStr Annual booth before filling out the form on "
+            "the homepage.",
+            "Event",
+            "SaaStr Annual - Booth conversation",
+        ),
+        (
+            "Met us at the SaaStr Annual booth after filling out the form on "
+            "the homepage.",
+            "Website",
+            "Form submission - homepage",
+        ),
+        (
+            "Filled out the form on the homepage after meeting us at the "
+            "SaaStr Annual booth.",
+            "Event",
+            "SaaStr Annual - Booth conversation",
+        ),
+        (
+            "Found us through organic Google search then filled out the form on "
+            "the pricing page.",
+            "Organic Search",
+            "Google organic search",
+        ),
+        (
+            "Met us at the SaaStr Annual booth and filled out the form on the "
+            "homepage.",
+            "Event",
+            "SaaStr Annual - Booth conversation",
+        ),
+    ],
+)
+def test_explicit_journey_order_selects_original_acquisition(
+    text: str, channel: str, detail: str
+) -> None:
+    result = extract_source(text)
+
+    assert result.channel == channel
+    assert result.detail == detail
+
+
 def test_extract_source_endpoint_validation_and_operational_suffixes(tmp_path: Path) -> None:
     app = create_app(f"sqlite:///{(tmp_path / 'source.db').as_posix()}", SEED_PATH)
     with TestClient(app) as client:
@@ -146,6 +206,10 @@ def test_extract_source_endpoint_validation_and_operational_suffixes(tmp_path: P
                 "she has not scanned our QR code."
             },
         )
+        ordered_journey = client.post(
+            "/leads/extract-source",
+            json={"text": "Referred by Elena Han, then connected on LinkedIn."},
+        )
 
     assert response.status_code == 200
     assert response.json() == {
@@ -157,6 +221,10 @@ def test_extract_source_endpoint_validation_and_operational_suffixes(tmp_path: P
     assert negated_scan.json() == {
         "channel": "Event",
         "detail": "Web Summit 2026 - Booth conversation; QR scan explicitly negated",
+    }
+    assert ordered_journey.json() == {
+        "channel": "Referral",
+        "detail": "Referred by Elena Han",
     }
 
 
@@ -273,3 +341,20 @@ def test_patch_persists_grounded_source_without_changing_notes(tmp_path: Path) -
     )
     assert stored is not None
     assert stored.notes == notes
+
+
+def test_patch_persists_original_source_from_ordered_journey(tmp_path: Path) -> None:
+    app = create_app(f"sqlite:///{(tmp_path / 'ordered.db').as_posix()}", SEED_PATH)
+    notes = "Connected on LinkedIn, then referred by Aiko Diop."
+
+    with TestClient(app) as client:
+        response = client.patch("/leads/100234811", json={"notes": notes})
+        with app.state.database.session_factory() as session:
+            stored = session.get(Lead, 100234811)
+
+    assert response.status_code == 200
+    assert response.json()["source_channel"] == "LinkedIn"
+    assert response.json()["source_detail"] == "LinkedIn interaction"
+    assert stored is not None
+    assert stored.notes == notes
+    assert stored.source_channel == "LinkedIn"

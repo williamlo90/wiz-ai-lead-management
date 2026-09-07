@@ -104,11 +104,11 @@ None identified. The service runs and the supplied-data workflows function. The 
 
 ## Remediation Milestones
 
-These numbers are separate from the completed implementation milestones 1-8. Remediation Milestone 1 is **IN PROGRESS**: R-01 is accepted and committed, while R-02 is not started. Remediation Milestones 2 and 3 are **NOT STARTED**.
+These numbers are separate from the completed implementation milestones 1-8. Remediation Milestone 1 is **ACCEPTED AND COMMITTED**. Remediation Milestones 2 and 3 are **NOT STARTED**.
 
 ### Remediation Milestone 1: Grounded Source Extraction
 
-**Status:** IN PROGRESS - R-01 accepted and committed; R-02 not started.
+**Status:** ACCEPTED AND COMMITTED - R-01 and R-02 are complete.
 
 #### Goal
 
@@ -147,12 +147,12 @@ No LLM, NLP framework, generic rule-engine architecture, exhaustive natural-lang
 
 #### Acceptance Criteria
 
-- [ ] All R-01/R-02 reproductions return grounded, chronologically defensible results.
+- [x] All R-01/R-02 reproductions return grounded, chronologically defensible results.
 - [x] Explicitly negated/unrelated scans never become booth scans for the R-01 cases.
 - [x] Inbound direction and referral names are not invented.
-- [ ] Ordered journeys and unordered ambiguity are distinguished.
-- [x] Existing supplied-data cases, taxonomy, API response shape, and raw text remain valid for R-01.
-- [x] R-01 tests pass; README states bounded evidence rules without claiming general-language accuracy.
+- [x] Ordered journeys and unordered ambiguity are distinguished.
+- [x] Existing supplied-data cases, taxonomy, API response shape, and raw text remain valid for R-01/R-02.
+- [x] R-01/R-02 tests pass; README states bounded evidence and ordering rules without claiming general-language accuracy.
 
 #### Risk
 
