@@ -72,6 +72,14 @@ When the user says `Approved. Commit and continue to the next milestone.`:
 
 Do not commit the newly implemented milestone until it receives its own approval. `Commit` alone authorizes committing the approved current work, not beginning the next milestone. Never batch multiple future milestones into one continuation. Documentation approval does not by itself authorize application implementation.
 
+## Remediation Workflow
+
+For commands naming a remediation milestone, use `docs/REMEDIATION_PLAN.md` as the improvement-phase scope and ordering source, alongside the assignment and technical contract. Remediation milestone numbers are separate from the original PLAN milestones 1-8.
+
+`Implement remediation milestone N.` authorizes only that milestone: read its scope, implement the smallest required changes, add/run its tests, verify acceptance criteria, update its status, report findings addressed/files/behavior/tests/deviations, and stop for review without committing.
+
+`Approved. Commit and continue to the next remediation milestone.` follows the existing approval/commit workflow, but selects the next remediation milestone from `docs/REMEDIATION_PLAN.md` instead of PLAN. Commit only approved work, then implement/test/report the next milestone and stop without committing it. Keep implemented, accepted, and committed statuses distinct.
+
 ## Documentation
 
 Update README incrementally when a milestone adds run instructions, API behavior, or design decisions useful for the final submission. Keep those updates small and factual; do not reconstruct everything at the final milestone or describe planned features as implemented.
