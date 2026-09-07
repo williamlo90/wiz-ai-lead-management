@@ -32,12 +32,14 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
-        database.create_tables()
-        with database.session_factory() as session:
-            load_seed_data(session, selected_seed_path)
-            backfill_missing_sources(session)
-        yield
-        database.engine.dispose()
+        try:
+            database.create_tables()
+            with database.session_factory() as session:
+                load_seed_data(session, selected_seed_path)
+                backfill_missing_sources(session)
+            yield
+        finally:
+            database.engine.dispose()
 
     app = FastAPI(
         title="Wiz AI Lead Management",

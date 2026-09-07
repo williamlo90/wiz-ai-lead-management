@@ -1,6 +1,6 @@
 # Implementation Specification
 
-Technical contract for the remaining take-home work. Milestones 1-4 are COMPLETED and accepted as the baseline. Milestone 5 is COMPLETED and awaiting user review; Milestones 6-8 are not implemented.
+Technical contract for the remaining take-home work. Milestones 1-5 are COMPLETED and accepted as the baseline. Milestone 6 is COMPLETED and awaiting user review; Milestones 7-8 are not implemented.
 
 Authority: `ASSIGNMENT.md` defines employer requirements; this document resolves implementation choices; `../PLAN.md` defines order and budget. Dataset evidence comes from `DATASET_ANALYSIS.md`, checked against the current code where relevant. Choices below are project assumptions unless explicitly attributed to the assignment.
 
@@ -269,14 +269,14 @@ Done when:
 - [x] Fresh import and existing-database null-source backfill work without reseeding or overwriting edits; repeated startup is stable.
 - [x] Ingest defaults, generic-follow-up preservation, PATCH replacement/clearing, and immediate persisted source consistency are verified. README explains rules and taxonomy choices.
 
-### Milestone 6: Integration Tests and Fixes (0.75h)
+### Milestone 6: Integration Tests and Fixes (0.75h) - COMPLETED
 
 Done when:
 
-- [ ] Run the complete suite; fix relevant failures rather than marking them as expected merely to pass.
-- [ ] Verify the integrated sequence: import -> filter/export -> PATCH -> ingest/replay/conflict -> dedupe -> extraction, including unchanged state after conflicts.
-- [ ] Test fresh-start failure/rollback with a small malformed seed and persistence across restart after a real edit. Check normalized status totals and null-date behavior against the analysis.
-- [ ] Keep fixes within observed correctness/integration issues; no unrelated restructuring or test-count target.
+- [x] Run the complete suite; fix relevant failures rather than marking them as expected merely to pass.
+- [x] Verify the integrated sequence: import -> filter/export -> PATCH -> ingest/replay/conflict -> dedupe -> extraction, including unchanged state after conflicts.
+- [x] Test fresh-start failure/rollback with a small malformed seed and persistence across restart after a real edit. Check normalized status totals and null-date behavior against the analysis.
+- [x] Keep fixes within observed correctness/integration issues; no unrelated restructuring or test-count target.
 
 ### Milestone 7: README and Fresh-Start Demo Verification (0.50h)
 
