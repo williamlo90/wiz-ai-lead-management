@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from sqlalchemy import func, select
 
 from app.database import Database
+from app.dashboard import router as dashboard_router
 from app.deduplication import router as deduplication_router
 from app.ingest import router as ingest_router
 from app.leads import router as leads_router
@@ -47,6 +48,7 @@ def create_app(
         lifespan=lifespan,
     )
     app.state.database = database
+    app.include_router(dashboard_router)
     app.include_router(ingest_router)
     app.include_router(deduplication_router)
     app.include_router(source_extraction_router)

@@ -30,6 +30,7 @@ Run tests:
 ## Available API
 
 - `GET /health`
+- `GET /dashboard`
 - `GET /leads?status=&owner=&country=&q=&limit=&offset=`
 - `GET /leads/export` with the same filters and search
 - `POST /leads/ingest`
@@ -124,6 +125,10 @@ Ambiguous exact matches, conflicting email/phone identities, incompatible names,
 
 Fresh seed imports derive source fields immediately, and startup backfills only missing derived fields in existing databases. PATCH recomputes attribution when Notes are replaced. Ingest prefers explicit message evidence, uses the known form as a Website fallback for new leads, and preserves established acquisition evidence through generic follow-ups. These are transparent heuristics rather than externally verified marketing attribution; no LLM or paid API is used.
 
+## Dashboard
+
+`GET /dashboard` returns the total stored records plus counts by canonical status and extracted source channel. Every supported category is present even when its count is zero, and both count groups reconcile to the total.
+
 ## Scope and Limitations
 
 - Matching scores are review heuristics, not calibrated probabilities or measured accuracy. Candidate generation can miss identities when every blocking key changes.
@@ -135,4 +140,4 @@ Fresh seed imports derive source fields immediately, and startup backfills only 
 
 ## Next Steps
 
-With more time, I would validate matching thresholds against a labeled review set, add a human conflict-resolution workflow, introduce migrations and stronger database constraints, and add authentication plus production observability only when deployment requirements justify them. The optional dashboard endpoint is intentionally omitted until the core workflow is accepted as stable.
+With more time, I would validate matching thresholds against a labeled review set, add a human conflict-resolution workflow, introduce migrations and stronger database constraints, and add authentication plus production observability only when deployment requirements justify them.

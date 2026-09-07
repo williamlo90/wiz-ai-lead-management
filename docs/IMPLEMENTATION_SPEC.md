@@ -1,6 +1,6 @@
 # Implementation Specification
 
-Technical contract for the remaining take-home work. Milestones 1-6 are COMPLETED and accepted as the baseline. Milestone 7 is COMPLETED and awaiting user review; Milestone 8 is not implemented.
+Technical contract for the take-home work. Milestones 1-7 are COMPLETED and accepted as the baseline. Milestone 8 dashboard work is COMPLETED and awaiting user review.
 
 Authority: `ASSIGNMENT.md` defines employer requirements; this document resolves implementation choices; `../PLAN.md` defines order and budget. Dataset evidence comes from `DATASET_ANALYSIS.md`, checked against the current code where relevant. Choices below are project assumptions unless explicitly attributed to the assignment.
 
@@ -288,13 +288,13 @@ Done when:
 - [x] Describe fuzzy/rules implementation truthfully; no LLM is used or billed. If an approved later change uses an LLM, document provider/model/cost.
 - [x] Run/dependency commands are repeatable, submission contains source/tests/data/docs but excludes environments/databases/caches, and future-production ideas are clearly separate from current behavior.
 
-### Milestone 8: Optional Dashboard or Contingency (0.50h)
+### Milestone 8: Optional Dashboard or Contingency (0.50h) - COMPLETED
 
 Done when:
 
-- [ ] User has authorized this optional milestone and all core work is stable.
-- [ ] If dashboard is selected, JSON counts satisfy Section 4 and reconcile after a write; a focused test passes. No frontend required.
-- [ ] Otherwise report contingency work or intentional omission. Do not claim a dashboard exists when it was skipped.
+- [x] User authorized this optional milestone after all core work was stable.
+- [x] Dashboard JSON counts satisfy Section 4 and reconcile after PATCH and ingest writes; a focused test passes. No frontend was added.
+- [x] Dashboard implementation was selected rather than contingency-only work.
 
 Milestone 1 allocation was 0.75h; the PLAN total remains 7.25h. Allocations are estimates, not a claim of elapsed time. Keep a handful of parameterized tests where useful; no comprehensive production test program.
 

@@ -230,6 +230,12 @@ class SourceExtractionResponse(StrictSchema):
     detail: str = Field(max_length=500)
 
 
+class DashboardResponse(StrictSchema):
+    total: int
+    by_status: dict[str, int]
+    by_source_channel: dict[str, int]
+
+
 class HealthResponse(BaseModel):
     status: str
     lead_count: int

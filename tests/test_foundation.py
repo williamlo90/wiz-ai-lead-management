@@ -66,6 +66,7 @@ def test_openapi_contains_milestone_two_endpoints(tmp_path: Path) -> None:
         schema = client.get("/openapi.json").json()
 
     assert set(schema["paths"]) == {
+        "/dashboard",
         "/health",
         "/leads",
         "/leads/dedupe-candidates",
