@@ -59,7 +59,7 @@ def test_seed_is_idempotent_and_normalized(tmp_path: Path) -> None:
     }
 
 
-def test_openapi_contains_milestone_two_endpoints(tmp_path: Path) -> None:
+def test_openapi_contains_all_public_endpoints(tmp_path: Path) -> None:
     app = build_test_app(tmp_path)
 
     with TestClient(app) as client:
@@ -78,7 +78,7 @@ def test_openapi_contains_milestone_two_endpoints(tmp_path: Path) -> None:
     assert "201" in schema["paths"]["/leads/ingest"]["post"]["responses"]
 
 
-def test_swagger_ui_uses_local_favicon(tmp_path: Path) -> None:
+def test_swagger_ui_uses_local_assets(tmp_path: Path) -> None:
     app = build_test_app(tmp_path)
 
     with TestClient(app) as client:

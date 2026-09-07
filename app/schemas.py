@@ -37,13 +37,6 @@ class LeadBase(StrictSchema):
     notes: str | None = None
 
 
-class LeadCreate(LeadBase):
-    created_at: datetime
-    updated_at: datetime | None = None
-    original_source: str | None = Field(default=None, max_length=255)
-    form_metadata: dict[str, Any] | None = None
-
-
 class LeadUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
