@@ -1,69 +1,99 @@
-# Wiz AI Lead Management
+# WIZ.AI Lead Management
 
-Small FastAPI service for importing and managing the supplied CRM-style lead dataset. It provides persistent SQLite storage, normalized seed import, lead APIs and CSV export, guarded website-form ingestion, explainable duplicate candidates, and rule-based source extraction.
+A small backend service for organizing sales leads: people or companies that may become customers. It turns a messy CRM export into searchable records, flags possible duplicate contacts, and reads sales notes to identify how each lead discovered the company.
 
-## Setup
+For example, two entries with slightly different names and the same phone number can be flagged for review. A note about meeting someone at an event booth becomes an **Event** source with the event name and interaction details.
 
-Requires Python 3.11 or newer. Clone or download this repository and run the commands below from its root directory.
+Built for the [WIZ.AI Mid-Level AI Builder take-home](docs/ASSIGNMENT.md), using the supplied synthetic dataset of **2,049 lead records**. It runs locally and can be tried through Swagger UI, an interactive API page in your browser.
+
+## What It Does
+
+| Task | Result |
+| --- | --- |
+| Find and manage leads | Search by name, company, or email; filter by status, owner, and country; update status, owner, or notes. |
+| Export a selection | Download all records matching the current filters as CSV. |
+| Receive a website form | Create a new lead or update one clearly identified existing contact. Uncertain matches are returned for human review. |
+| Spot duplicate contacts | Return likely duplicate pairs, ranked by confidence, with reasons for each suggestion. Records are not automatically merged. |
+| Identify lead sources | Turn free-text notes into a source category and a short explanation. |
+| View a summary | Return counts by lead status and source category through the bonus dashboard endpoint. |
+
+**Example: turning a note into structured source information**
+
+Input:
+
+> Met her at the Singapore FinTech Festival 2026 booth, scanned our QR code.
+
+Output:
+
+```json
+{
+  "channel": "Event",
+  "detail": "Singapore FinTech Festival 2026 - Booth QR Code"
+}
+```
+
+The application uses fuzzy matching and text rules. It requires no language model or API key, and its LLM API cost is **$0**.
+
+## Run and Try It
+
+Requires **Python 3.11 or newer**. Clone or download the repository, then run these commands from its root directory.
+
+### Install and Start
+
+Windows PowerShell:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[test]"
-```
-
-On macOS or Linux, use `.venv/bin/python` in place of `.\.venv\Scripts\python.exe`.
-
-Run the service:
-
-```powershell
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
 ```
 
-Open `http://127.0.0.1:8000/docs` for the generated API documentation.
+macOS or Linux:
 
-Startup creates `leads.db` in the repository root and imports the supplied seed automatically. No separate database service or API key is required.
-
-Run tests:
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest -q
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -e ".[test]"
+.venv/bin/python -m uvicorn app.main:app --reload
 ```
 
-Tests use temporary SQLite databases and cover ambiguous matches, conflicting identifiers, ingest replay, source attribution, filtered CSV export, and persistence across restarts.
+Startup creates a local `leads.db` file and imports the supplied seed automatically. No separate database service is required. Changes are saved between restarts.
 
-## Available API
+### Try the Main Features
 
-- `GET /health`
-- `GET /dashboard`
-- `GET /leads?status=&owner=&country=&q=&limit=&offset=`
-- `GET /leads/export` with the same filters and search
-- `POST /leads/ingest`
-- `POST /leads/dedupe-candidates`
-- `POST /leads/extract-source`
-- `GET /leads/{id}`
-- `PATCH /leads/{id}` with status, owner, and/or notes
+Open [Swagger UI](http://127.0.0.1:8000/docs). Expand an endpoint, select **Try it out**, enter any parameters or request body, and select **Execute**. Results appear on the same page.
 
-Filters combine with AND. Search is a case-insensitive literal substring across name, company, and email. Export returns the complete filtered view rather than one paginated list page.
+1. **See the summary:** execute `GET /dashboard`. A fresh database has `total: 2049`, with counts by status and source.
+2. **Browse leads:** execute `GET /leads` with `limit=10`. Try `country=Singapore` or enter part of a name, company, or email in `q`.
+3. **Review duplicate suggestions:** execute `POST /leads/dedupe-candidates` with:
+   ```json
+   {"min_score": 0.75, "limit": 10}
+   ```
+   Each pair includes lead IDs, a score, a confidence band, and reasons.
+4. **Identify a source:** execute `POST /leads/extract-source` with:
+   ```json
+   {"text": "Met her at the Singapore FinTech Festival 2026 booth, scanned our QR code."}
+   ```
+   The result matches the Event example above. This endpoint does not modify stored records.
 
-Configuration can override the defaults with `DATABASE_URL` and `SEED_DATA_PATH`. SQLite and synchronous SQLAlchemy keep the local take-home setup small and persistent.
+Swagger UI is the interface for this backend submission; the dashboard returns JSON counts rather than rendered charts.
 
-For a custom SQLite path, create its parent directory first. The paths below are examples to replace with your own.
+## API Reference
 
-```powershell
-$env:DATABASE_URL = "sqlite:///C:/temp/wiz-leads.db"
-$env:SEED_DATA_PATH = "C:/path/to/leads_seed.csv"
-.\.venv\Scripts\python.exe -m uvicorn app.main:app
-```
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /health` | Check service health and record count. |
+| `GET /leads` | List leads using `status`, `owner`, `country`, `q`, `limit`, and `offset`. |
+| `GET /leads/{id}` | Read one lead. |
+| `PATCH /leads/{id}` | Update status, owner, and/or notes. |
+| `GET /leads/export` | Export all leads matching the same filters and search. |
+| `POST /leads/ingest` | Accept one website-form submission. |
+| `POST /leads/dedupe-candidates` | Suggest duplicate pairs for review. |
+| `POST /leads/extract-source` | Extract a source from text without saving it. |
+| `GET /dashboard` | Return total records and counts by status and source. |
 
-## Example Requests
+Filters combine with AND. Search is a case-insensitive literal substring across name, company, and email. Export includes the complete filtered view, not just the current page.
 
-List and search leads:
-
-```http
-GET /leads?status=Qualified&country=Singapore&q=fintech&limit=25&offset=0
-```
-
-Update the supported operational fields:
+Example update:
 
 ```http
 PATCH /leads/100234811
@@ -72,29 +102,7 @@ Content-Type: application/json
 {"status":"Qualified","owner":"Marcus Wong","notes":"Referred by Aiko Diop, warm intro."}
 ```
 
-Request ranked duplicate pairs for review:
-
-```http
-POST /leads/dedupe-candidates
-Content-Type: application/json
-
-{"min_score":0.75,"limit":10}
-```
-
-Extract acquisition source without storing anything:
-
-```http
-POST /leads/extract-source
-Content-Type: application/json
-
-{"text":"Met her at the Singapore FinTech Festival 2026 booth, scanned our QR code."}
-```
-
-```json
-{"channel":"Event","detail":"Singapore FinTech Festival 2026 - Booth QR Code"}
-```
-
-Ingest accepts one object shaped like an entry in `data/website_form_submissions.json`:
+Example website submission, shaped like an entry in [website_form_submissions.json](data/website_form_submissions.json):
 
 ```http
 POST /leads/ingest
@@ -114,60 +122,111 @@ Content-Type: application/json
 }
 ```
 
-## Import and Normalization
+## Design Decisions
 
-On first startup, an empty database imports all 2,049 seed rows in one transaction while retaining their original record IDs. A nonempty database is never reimported or overwritten on restart. Existing databases receive a narrow backfill only when derived source fields are missing.
+### Storage and Messy Data
 
-The model keeps contact details, status/owner, Notes, timestamps, raw Original Source, derived attribution, and form metadata. Names use `Full Name` when populated, otherwise combined `First Name` and `Last Name`. Unused CRM columns such as revenue, consent, job title, city, and lead score are omitted from storage because they are not needed by the required workflows; the original CSV remains available.
+**FastAPI** exposes the API, **Pydantic** validates requests and responses, and **SQLAlchemy with SQLite** provides persistent storage. SQLite keeps setup small without requiring a database server.
 
-Display values retain useful source formatting. Separate matching keys casefold email/name, keep complete phone digits including country code, and normalize company punctuation and whitespace. Status is mapped to the seven observed canonical values; owner whitespace and country casing are normalized. Email and phone are deliberately not unique because duplicate seed records must remain representable.
+The model retains contact details, status, owner, Notes, timestamps, raw Original Source, derived source fields, and form metadata. Revenue, consent, job title, city, and lead score are omitted from storage because the required workflows do not use them. Both original data files remain included and unchanged.
 
-The importer explicitly supports `YYYY-MM-DD`, `M/D/YYYY`, and ISO UTC timestamps. Date-only values are stored as UTC midnight by convention, not as observed event times. Blank modification dates remain null; API timestamps are serialized with `Z`. Raw seed files are never rewritten.
+Normalization follows a few explicit rules:
 
-## Duplicate Candidates
+- Use `Full Name` when present; otherwise combine `First Name` and `Last Name`.
+- Map status variations such as `new` and ` NEW ` to the seven observed canonical statuses; normalize owner whitespace and country casing.
+- Keep display values separate from matching keys. Compare names/emails without case differences, retain all phone digits including any supplied country code, and normalize company punctuation and whitespace.
+- Accept `YYYY-MM-DD`, `M/D/YYYY`, and ISO UTC timestamps. Treat date-only values as UTC midnight by convention; leave missing modification dates null and serialize API timestamps with `Z`.
+- Preserve original record IDs and allow repeated emails/phones so seed duplicates remain available for review.
 
-The deduplication endpoint first blocks records on normalized email, phone, email domain, or company, then applies explainable RapidFuzz name/company rules. On the supplied seed this evaluates 5,047 candidate pairs instead of all 2,098,176 possible pairs. Results contain a heuristic score, confidence band, and evidence such as matching normalized contact details or conflicting names.
+An empty leads table imports all seed records in one transaction. A nonempty table is not reimported on restart; only missing derived source fields are backfilled.
 
-Fuzzy matching suits the observed spelling, initials, and contact-format variations while keeping each decision explainable and inexpensive. Blocking keeps comparisons tractable for this dataset without model inference or an external service. Results are pairs ranked by descending score, with lead IDs breaking ties; `total_matches` counts qualifying pairs before the result limit.
+### Duplicate Detection
 
-Scores are conservative decision rules, not calibrated probabilities. Similar company/domain values alone cannot produce a match, missing fields do not count as agreement, and incompatible fully spelled given names prevent false positives. The endpoint is read-only and does not merge records.
+**Blocking + RapidFuzz fuzzy matching** handles spelling differences, initials, and contact formatting with explainable rules.
 
-## Website Form Ingestion
+First, blocking narrows the search to pairs sharing a normalized email, phone, email domain, or company. Then the scorer compares contact evidence, name/company similarity, and email local parts. On the supplied seed, this evaluates **5,047 candidate pairs instead of 2,098,176 possible pairs**.
 
-`POST /leads/ingest` validates a website submission and returns `201` with `action: "created"` for a new identity or `200` with `action: "updated"` for one clearly supported existing identity. Updates preserve established contact, owner, status, and creation data; distinct messages are appended without changing line formatting. Exact replays do not add a record, duplicate Notes, or change timestamps.
+Shared company/domain alone is insufficient. Missing values do not count as agreement, and incompatible fully spelled given names guard against mistaking different people for one contact.
 
-Ambiguous exact matches, conflicting email/phone identities, incompatible names, and fuzzy-only likely matches return `409` with a machine-readable `ambiguous_match` or `conflicting_identity` code plus ranked candidate evidence. This intentionally requires human resolution instead of choosing or updating a seed duplicate automatically.
+Results are pairs ranked by descending score, with lead IDs breaking ties. Each includes a confidence band and supporting or conflicting evidence; `total_matches` counts qualifying pairs before the response limit. Scores are review heuristics, not calibrated probabilities. The endpoint never merges records.
 
-## Source Extraction
+### Website Intake and Conflicts
 
-Rules and regular expressions were chosen because the supplied Notes contain recurring acquisition patterns. They provide reproducible, inspectable results without model credentials or inference cost, with limited coverage of unfamiliar phrasing as the tradeoff. The allowed channels are `Website`, `Event`, `LinkedIn`, `Organic Search`, `Referral`, `Manual/Sales`, and `Other`.
+The intake endpoint uses the same matching logic to decide whether a submission belongs to an existing contact:
 
-`POST /leads/extract-source` accepts `{"text": "..."}` and returns one of the seven required channels plus concise evidence-based detail. The extractor uses deterministic, case-insensitive rules for event booths, referrals, LinkedIn, organic Google discovery, website forms, and manual sales entry. It preserves stated event years, distinguishes QR scans from explicit scan negation, maps paid Google advertising and unnamed social posts to `Other`, and returns `Source unspecified` when there is no evidence. Operational sales updates and duplicate warnings are excluded from the derived detail while the original Notes remain unchanged.
+| Situation | Response |
+| --- | --- |
+| No supported match, and no unresolved exact-contact conflict | `201`, `action: "created"` |
+| One clearly supported existing identity | `200`, `action: "updated"` |
+| Multiple plausible identities, conflicting contact details, or a fuzzy-only likely match | `409`, with a conflict code and candidate evidence |
 
-Raw `Original Source` is retained for context, but extraction uses Notes because the CRM label may be blank or too generic to establish acquisition details.
+Conflict codes are `ambiguous_match` or `conflicting_identity`. These cases require human resolution.
 
-The observed `SFF` alias expands to `Singapore FinTech Festival`; a year is included only when it appears in the Notes.
+Updates preserve established contact details, owner, status, and creation data. Distinct messages are appended to Notes while preserving formatting. Replaying the same submission does not add another lead, repeat the message, or change timestamps.
 
-Event interactions and referral names are bounded to the relevant sentence or clause, and LinkedIn DM direction is included only when the Notes state it explicitly.
+### Source Extraction
 
-When exactly two distinct sources are connected by one explicit `then`, `before`, or `after`, the extractor selects the stated original acquisition. Without explicit ordering, search/event evidence remains the acquisition rather than a later Website form transport; genuinely competing non-Website sources remain `Other` with ambiguity detail.
+**Deterministic rules and regular expressions** recognize recurring patterns in the supplied Notes. This makes results reproducible, inspectable, and inexpensive; unfamiliar wording remains a limitation.
 
-Fresh seed imports derive source fields immediately, and startup backfills only missing derived fields in existing databases. PATCH recomputes attribution when Notes are replaced. Ingest prefers explicit message evidence, uses the known form as a Website fallback for new leads, and preserves established acquisition evidence through generic follow-ups. These are transparent heuristics rather than externally verified marketing attribution; no LLM or paid API is used.
+The output contains a `channel` and evidence-based `detail`. Allowed channels are **Website, Event, LinkedIn, Organic Search, Referral, Manual/Sales, and Other**.
 
-## Dashboard
+Notes provide the evidence because the CRM's Original Source label can be blank or too generic. The original label is retained for context. Rules recognize event encounters, referrals, LinkedIn interactions, organic Google discovery, website forms, and sales contact.
 
-`GET /dashboard` returns the total stored records plus counts by canonical status and extracted source channel. Every supported category is present even when its count is zero, and both count groups reconcile to the total.
+Key decisions:
 
-## Scope and Limitations
+- Preserve stated event years and distinguish QR scans from explicit scan negation. Expand the observed `SFF` alias to `Singapore FinTech Festival`; do not infer a year.
+- Bound event and referral details to the relevant clause or sentence. Include LinkedIn message direction only when explicitly stated.
+- Map paid Google advertising and unnamed social posts to `Other`. Without evidence, return `Other` with `Source unspecified`.
+- For two distinct sources with a supported explicit `then`, `before`, or `after` ordering, select the original acquisition. Otherwise, acquisition evidence takes priority over website-form transport; competing non-Website channels return an ambiguous `Other` result.
+- Exclude operational sales updates and duplicate warnings from extracted detail while preserving the original Notes.
 
-- Matching scores are review heuristics, not calibrated probabilities or measured accuracy. Candidate generation can miss identities when every blocking key changes.
-- Matching normalization preserves Unicode display values but its comparison/token rules are ASCII-oriented; multilingual names and companies may require locale-aware normalization in a broader system.
-- Ambiguous ingestion requires manual resolution; there is no merge or conflict-resolution endpoint.
-- Replay protection prevents duplicate lead/message changes for the demonstrated flow, but it is not an exactly-once delivery system.
-- Source extraction recognizes the supplied text families and returns grounded detail; it is not a general natural-language attribution model.
-- SQLite and synchronous request handling are intentional for this local take-home. Authentication, queues, deployment, monitoring, and a frontend are out of scope.
-- The application makes no LLM calls and uses no local or mocked language model. No runtime model provider or API key is required; LLM API cost is $0.
+Import derives sources immediately. Replacing or clearing Notes through PATCH recomputes the source. New website submissions use explicit message evidence, falling back to Website when none is available. Generic follow-ups preserve established acquisition evidence.
+
+**LLM usage and cost:** the application calls no LLM and uses no local or mocked language model. No runtime model provider or API key is required; LLM API cost is **$0**. The assignment explicitly permits fuzzy matching and rules/regex.
+
+## Tests
+
+Windows:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+macOS or Linux:
+
+```bash
+.venv/bin/python -m pytest -q
+```
+
+Tests use temporary SQLite databases and cover:
+
+- Filtering, search, PATCH validation, pagination, and CSV export.
+- Duplicate positives, similar-looking different people, missing evidence, and matching thresholds.
+- Website intake creation, updates, conflicting identities, and repeated submissions.
+- Source ambiguity, chronology, negation, and source changes after Notes updates.
+- Import rollback, restart persistence, and dashboard counts after writes.
+
+## Optional Configuration
+
+Defaults are the repository's `leads.db` and `data/leads_seed.csv`. To override them, set `DATABASE_URL` and `SEED_DATA_PATH` before starting the server.
+
+PowerShell example; replace these paths and create the database's parent directory first:
+
+```powershell
+$env:DATABASE_URL = "sqlite:///C:/temp/wiz-leads.db"
+$env:SEED_DATA_PATH = "C:/path/to/leads_seed.csv"
+.\.venv\Scripts\python.exe -m uvicorn app.main:app
+```
+
+## Limitations and Scope
+
+- Matching can miss duplicates when all blocking keys change. Scores have not been calibrated against a labeled dataset, and comparison rules are ASCII-oriented despite preserving Unicode display values.
+- Ambiguous submissions need human review; no merge or conflict-resolution endpoint is included.
+- Replay protection handles repeated lead/message submissions, but is not an exactly-once delivery guarantee.
+- Source extraction covers the supplied text patterns, not general language understanding or independently verified attribution.
+- Dashboard counts represent stored records, including duplicates, rather than unique people. All supported categories are included, even with zero counts.
+- Authentication, analytics integrations, webhook infrastructure, audit-history UI, HubSpot migration tooling, and production deployment/scaling/monitoring are excluded to keep the take-home focused. A custom frontend is also omitted; Swagger UI supports local review.
 
 ## Next Steps
 
-With more time, I would validate matching thresholds against a labeled review set, add a human conflict-resolution workflow, introduce migrations and stronger database constraints, and add authentication plus production observability only when deployment requirements justify them.
+With more time, I would first validate matching thresholds against a labeled review set and add a human conflict-resolution workflow. Database migrations and stronger constraints would follow. Authentication and production observability would be added when deployment requirements justify them.
