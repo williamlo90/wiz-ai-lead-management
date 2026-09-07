@@ -1,6 +1,6 @@
 # Implementation Specification
 
-Technical contract for the remaining take-home work. Milestones 1-2 are COMPLETED and accepted as the baseline. Milestone 3 is COMPLETED and awaiting user review; Milestones 4-8 are not implemented. This specification is proposed for user review; creating it does not authorize the next milestone or a commit.
+Technical contract for the remaining take-home work. Milestones 1-3 are COMPLETED and accepted as the baseline. Milestone 4 is COMPLETED and awaiting user review; Milestones 5-8 are not implemented.
 
 Authority: `ASSIGNMENT.md` defines employer requirements; this document resolves implementation choices; `../PLAN.md` defines order and budget. Dataset evidence comes from `DATASET_ANALYSIS.md`, checked against the current code where relevant. Choices below are project assumptions unless explicitly attributed to the assignment.
 
@@ -251,14 +251,14 @@ Done when:
 - [x] Reviewed formatting/typo/initial positives and similar-looking negatives exercise threshold guards. Score is never represented as calibrated accuracy.
 - [x] Threshold boundaries, missing evidence, deterministic ordering/limit, and absence of database mutation are checked. Document matching decisions and known recall limits.
 
-### Milestone 4: Ingest Create/Update/Conflict Behavior (0.75h)
+### Milestone 4: Ingest Create/Update/Conflict Behavior (0.75h) - COMPLETED
 
 Done when:
 
-- [ ] Section 6 decision order and field policy are implemented in a single transaction per successful write.
-- [ ] Tests cover new lead, unambiguous existing identity, fuzzy-only likely match, multiple exact hits, cross-record email/phone conflict, and incompatible names with an exact identifier.
-- [ ] Replay preserves count/notes/timestamps; a distinct multiline message appends intact; status/owner/contact preservation and submission-time metadata ordering are verified.
-- [ ] Responses and status codes are documented; extraction remains pending until Milestone 5.
+- [x] Section 6 decision order and field policy are implemented in a single transaction per successful write.
+- [x] Tests cover new lead, unambiguous existing identity, fuzzy-only likely match, multiple exact hits, cross-record email/phone conflict, and incompatible names with an exact identifier.
+- [x] Replay preserves count/notes/timestamps; a distinct multiline message appends intact; status/owner/contact preservation and submission-time metadata ordering are verified.
+- [x] Responses and status codes are documented; extraction remains pending until Milestone 5.
 
 ### Milestone 5: Source Extraction and API/Import/Update Integration (1.00h)
 

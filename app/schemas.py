@@ -205,6 +205,11 @@ class DedupeResponse(StrictSchema):
     total_matches: int
 
 
+class IngestResponse(StrictSchema):
+    action: Literal["created", "updated"]
+    lead: LeadRead
+
+
 class HealthResponse(BaseModel):
     status: str
     lead_count: int

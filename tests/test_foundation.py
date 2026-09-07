@@ -70,7 +70,8 @@ def test_openapi_contains_milestone_two_endpoints(tmp_path: Path) -> None:
         "/leads",
         "/leads/dedupe-candidates",
         "/leads/export",
+        "/leads/ingest",
         "/leads/{lead_id}",
     }
+    assert "201" in schema["paths"]["/leads/ingest"]["post"]["responses"]
     assert "/leads/extract-source" not in schema["paths"]
-    assert "/leads/ingest" not in schema["paths"]

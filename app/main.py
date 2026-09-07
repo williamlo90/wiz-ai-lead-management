@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 
 from app.database import Database
 from app.deduplication import router as deduplication_router
+from app.ingest import router as ingest_router
 from app.leads import router as leads_router
 from app.models import Lead
 from app.schemas import HealthResponse
@@ -41,6 +42,7 @@ def create_app(
         lifespan=lifespan,
     )
     app.state.database = database
+    app.include_router(ingest_router)
     app.include_router(deduplication_router)
     app.include_router(leads_router)
 

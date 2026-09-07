@@ -30,6 +30,7 @@ Run tests:
 - `GET /health`
 - `GET /leads?status=&owner=&country=&q=&limit=&offset=`
 - `GET /leads/export` with the same filters and search
+- `POST /leads/ingest`
 - `POST /leads/dedupe-candidates`
 - `GET /leads/{id}`
 - `PATCH /leads/{id}` with status, owner, and/or notes
@@ -44,4 +45,10 @@ The deduplication endpoint first blocks records on normalized email, phone, emai
 
 Scores are conservative decision rules, not calibrated probabilities. Similar company/domain values alone cannot produce a match, missing fields do not count as agreement, and incompatible fully spelled given names prevent false positives. The endpoint is read-only and does not merge records.
 
-Website-form ingestion behavior, source extraction, and the optional dashboard are planned milestones and are not currently exposed as endpoints.
+## Website Form Ingestion
+
+`POST /leads/ingest` validates a website submission and returns `201` with `action: "created"` for a new identity or `200` with `action: "updated"` for one clearly supported existing identity. Updates preserve established contact, owner, status, and creation data; distinct messages are appended without changing line formatting. Exact replays do not add a record, duplicate Notes, or change timestamps.
+
+Ambiguous exact matches, conflicting email/phone identities, incompatible names, and fuzzy-only likely matches return `409` with a machine-readable code and candidate evidence. This intentionally requires human resolution instead of choosing or updating a seed duplicate automatically.
+
+Source extraction and the optional dashboard are planned milestones and are not currently exposed as endpoints.
