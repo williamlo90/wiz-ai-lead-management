@@ -104,11 +104,11 @@ None identified. The service runs and the supplied-data workflows function. The 
 
 ## Remediation Milestones
 
-These numbers are separate from the completed implementation milestones 1-8. Remediation Milestone 1 is **IN PROGRESS**: R-01 is implemented and awaiting review, while R-02 is not started. Remediation Milestones 2 and 3 are **NOT STARTED**.
+These numbers are separate from the completed implementation milestones 1-8. Remediation Milestone 1 is **IN PROGRESS**: R-01 is accepted and committed, while R-02 is not started. Remediation Milestones 2 and 3 are **NOT STARTED**.
 
 ### Remediation Milestone 1: Grounded Source Extraction
 
-**Status:** IN PROGRESS - R-01 implemented and awaiting review; R-02 not started.
+**Status:** IN PROGRESS - R-01 accepted and committed; R-02 not started.
 
 #### Goal
 

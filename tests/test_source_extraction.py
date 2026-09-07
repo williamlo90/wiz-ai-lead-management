@@ -69,6 +69,64 @@ def test_extract_source_rules(text: str, channel: str, detail: str) -> None:
     assert extract_source(text).detail == detail
 
 
+@pytest.mark.parametrize(
+    ("text", "detail"),
+    [
+        (
+            "Met her at the Web Summit 2026 booth, she has not scanned our QR code.",
+            "Web Summit 2026 - Booth conversation; QR scan explicitly negated",
+        ),
+        (
+            "Met her at the Web Summit 2026 booth and did not scan our QR code.",
+            "Web Summit 2026 - Booth conversation; QR scan explicitly negated",
+        ),
+        (
+            "Met her at the Web Summit 2026 booth. "
+            "Scanned our QR code in the office a week later.",
+            "Web Summit 2026 - Booth conversation",
+        ),
+        (
+            "Met her at the Web Summit 2026 booth, but scanned our QR code "
+            "in the office a week later.",
+            "Web Summit 2026 - Booth conversation",
+        ),
+    ],
+)
+def test_event_details_use_only_the_event_sentence(text: str, detail: str) -> None:
+    result = extract_source(text)
+
+    assert result.channel == "Event"
+    assert result.detail == detail
+
+
+@pytest.mark.parametrize(
+    ("text", "detail"),
+    [
+        ("Sent a LinkedIn DM asking about pricing.", "LinkedIn DM; pricing inquiry"),
+        (
+            "Received an email. Sent a LinkedIn DM asking about pricing.",
+            "LinkedIn DM; pricing inquiry",
+        ),
+        (
+            "Received a LinkedIn DM asking about pricing.",
+            "LinkedIn DM inbound; pricing inquiry",
+        ),
+        (
+            "Referred by Mary Jane van Doe, warm intro.",
+            "Referred by Mary Jane van Doe",
+        ),
+        (
+            "Referred by Aiko Diop\n\nConnected, sending proposal.",
+            "Referred by Aiko Diop",
+        ),
+    ],
+)
+def test_person_and_direction_details_require_explicit_evidence(
+    text: str, detail: str
+) -> None:
+    assert extract_source(text).detail == detail
+
+
 def test_extract_source_endpoint_validation_and_operational_suffixes(tmp_path: Path) -> None:
     app = create_app(f"sqlite:///{(tmp_path / 'source.db').as_posix()}", SEED_PATH)
     with TestClient(app) as client:
@@ -81,6 +139,13 @@ def test_extract_source_endpoint_validation_and_operational_suffixes(tmp_path: P
         )
         blank = client.post("/leads/extract-source", json={"text": "  "})
         invalid = client.post("/leads/extract-source", json={"text": None})
+        negated_scan = client.post(
+            "/leads/extract-source",
+            json={
+                "text": "Met at the Web Summit 2026 booth; "
+                "she has not scanned our QR code."
+            },
+        )
 
     assert response.status_code == 200
     assert response.json() == {
@@ -89,6 +154,10 @@ def test_extract_source_endpoint_validation_and_operational_suffixes(tmp_path: P
     }
     assert blank.json() == {"channel": "Other", "detail": "Source unspecified"}
     assert invalid.status_code == 422
+    assert negated_scan.json() == {
+        "channel": "Event",
+        "detail": "Web Summit 2026 - Booth conversation; QR scan explicitly negated",
+    }
 
 
 def test_fresh_import_extracts_all_seed_sources(tmp_path: Path) -> None:
@@ -186,3 +255,21 @@ def test_patch_recomputes_and_clears_source_immediately(tmp_path: Path) -> None:
     assert changed.json()["source_detail"] == "LinkedIn DM inbound; pricing inquiry"
     assert cleared.json()["source_channel"] == "Other"
     assert cleared.json()["source_detail"] == "Source unspecified"
+
+
+def test_patch_persists_grounded_source_without_changing_notes(tmp_path: Path) -> None:
+    app = create_app(f"sqlite:///{(tmp_path / 'grounded.db').as_posix()}", SEED_PATH)
+    notes = "Met her at the Web Summit 2026 booth, she has not scanned our QR code."
+
+    with TestClient(app) as client:
+        response = client.patch("/leads/100234811", json={"notes": notes})
+        with app.state.database.session_factory() as session:
+            stored = session.get(Lead, 100234811)
+
+    assert response.status_code == 200
+    assert response.json()["source_channel"] == "Event"
+    assert response.json()["source_detail"] == (
+        "Web Summit 2026 - Booth conversation; QR scan explicitly negated"
+    )
+    assert stored is not None
+    assert stored.notes == notes

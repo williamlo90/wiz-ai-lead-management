@@ -55,7 +55,9 @@ class SourceResult:
 
 
 def _clean_for_extraction(text: str | None) -> str:
-    cleaned = " ".join((text or "").split()).strip()
+    normalized = (text or "").replace("\r\n", "\n").replace("\r", "\n")
+    cleaned = "\n".join(" ".join(line.split()) for line in normalized.split("\n"))
+    cleaned = cleaned.strip()
     duplicate_pattern = re.compile(
         r"\s*possible duplicate\s*\W+\s*verify before contacting\.?\s*$",
         re.IGNORECASE,
@@ -74,6 +76,14 @@ def _clean_for_extraction(text: str | None) -> str:
     return cleaned
 
 
+def _sentences(text: str) -> list[str]:
+    return [
+        sentence.strip()
+        for sentence in re.split(r"(?<=[.!?])\s+|\n+", text)
+        if sentence.strip()
+    ]
+
+
 def _canonical_event(value: str) -> str:
     match = re.search(r"\b((?:19|20)\d{2})\b", value)
     year = f" {match.group(1)}" if match else ""
@@ -88,17 +98,41 @@ def _canonical_event(value: str) -> str:
 
 
 def _event_result(text: str) -> SourceResult | None:
-    event = EVENT_PATTERN.search(text)
-    if not event or not re.search(r"\bbooth\b", text, re.IGNORECASE):
+    event_sentence = next(
+        (
+            sentence
+            for sentence in _sentences(text)
+            if EVENT_PATTERN.search(sentence)
+            and re.search(r"\bbooth\b", sentence, re.IGNORECASE)
+        ),
+        None,
+    )
+    if event_sentence is None:
         return None
+    event = EVENT_PATTERN.search(event_sentence)
+    assert event is not None
     event_name = _canonical_event(event.group(0))
-    if re.search(r"\bno\s+qr\s+scan\s+logged\b", text, re.IGNORECASE):
+    qr_scan = re.search(
+        r"(?:\bscanned\b.{0,30}\bqr code\b|\bqr code\b.{0,30}\bscanned\b)",
+        event_sentence,
+        re.IGNORECASE,
+    )
+    unrelated_scan = qr_scan and re.search(
+        r"\b(?:in|at)\s+(?:our\s+|the\s+)?(?:office|home|hotel|airport)\b",
+        event_sentence[qr_scan.start() : qr_scan.end() + 50],
+        re.IGNORECASE,
+    )
+    if re.search(r"\bno\s+qr\s+scan\s+logged\b", event_sentence, re.IGNORECASE):
         interaction = "Booth conversation; no QR scan logged"
     elif re.search(
-        r"(?:\bscanned\b.{0,30}\bqr code\b|\bqr code\b.{0,30}\bscanned\b)",
-        text,
+        r"\b(?:(?:has|have|had|did|does|do)\s+not|"
+        r"(?:hasn't|haven't|hadn't|didn't|doesn't))\s+"
+        r"scan(?:ned|ning)?\b.{0,40}\bqr\s+code\b",
+        event_sentence,
         re.IGNORECASE,
     ):
+        interaction = "Booth conversation; QR scan explicitly negated"
+    elif qr_scan and not unrelated_scan:
         interaction = "Booth QR Code"
     else:
         interaction = "Booth conversation"
@@ -106,21 +140,44 @@ def _event_result(text: str) -> SourceResult | None:
 
 
 def _referral_result(text: str) -> SourceResult | None:
-    match = re.search(r"\breferred\s+by\s+([^,.;\n]+)", text, re.IGNORECASE)
+    match = re.search(
+        r"\breferred\s+by\s+(.+?)(?=,|[.;\n]|\s+then\b|"
+        r"\s+and\s+(?:connected|contacted|met|called|emailed)\b|$)",
+        text,
+        re.IGNORECASE,
+    )
     if not match:
         return None
     return SourceResult("Referral", f"Referred by {match.group(1).strip()}")
 
 
 def _linkedin_result(text: str) -> SourceResult | None:
-    if not re.search(r"\blinked\s*in\b", text, re.IGNORECASE):
+    linkedin_sentences = [
+        sentence
+        for sentence in _sentences(text)
+        if re.search(r"\blinked\s*in\b", sentence, re.IGNORECASE)
+    ]
+    if not linkedin_sentences:
         return None
-    if re.search(r"\bdm\b", text, re.IGNORECASE):
-        detail = "LinkedIn DM inbound"
-        if re.search(r"\bpricing\b", text, re.IGNORECASE):
+    dm_sentence = next(
+        (
+            sentence
+            for sentence in linkedin_sentences
+            if re.search(r"\bdm\b", sentence, re.IGNORECASE)
+        ),
+        None,
+    )
+    if dm_sentence:
+        detail = "LinkedIn DM"
+        if re.search(r"\binbound\b|\breceived\b", dm_sentence, re.IGNORECASE):
+            detail += " inbound"
+        if re.search(r"\bpricing\b", dm_sentence, re.IGNORECASE):
             detail += "; pricing inquiry"
         return SourceResult("LinkedIn", detail)
-    if re.search(r"\bpost\b|\bcomment", text, re.IGNORECASE):
+    if any(
+        re.search(r"\bpost\b|\bcomment", sentence, re.IGNORECASE)
+        for sentence in linkedin_sentences
+    ):
         return SourceResult("LinkedIn", "LinkedIn post interaction")
     return SourceResult("LinkedIn", "LinkedIn interaction")
 

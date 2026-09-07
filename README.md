@@ -123,6 +123,8 @@ Ambiguous exact matches, conflicting email/phone identities, incompatible names,
 
 `POST /leads/extract-source` accepts `{"text": "..."}` and returns one of the seven required channels plus concise evidence-based detail. The extractor uses deterministic, case-insensitive rules for event booths, referrals, LinkedIn, organic Google discovery, website forms, and manual sales entry. It preserves stated event years, distinguishes QR scans from explicit scan negation, maps paid Google advertising and unnamed social posts to `Other`, and returns `Source unspecified` when there is no evidence. Operational sales updates and duplicate warnings are excluded from the derived detail while the original Notes remain unchanged.
 
+Event interactions and referral names are bounded to the relevant sentence or clause, and LinkedIn DM direction is included only when the Notes state it explicitly.
+
 Fresh seed imports derive source fields immediately, and startup backfills only missing derived fields in existing databases. PATCH recomputes attribution when Notes are replaced. Ingest prefers explicit message evidence, uses the known form as a Website fallback for new leads, and preserves established acquisition evidence through generic follow-ups. These are transparent heuristics rather than externally verified marketing attribution; no LLM or paid API is used.
 
 ## Dashboard
